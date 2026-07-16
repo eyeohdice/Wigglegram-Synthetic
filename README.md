@@ -38,7 +38,7 @@ Single `index.html`. Three.js (r128, via CDN) for rendering, a hand-rolled aniso
 
 ---
 
-Wiggle responsibly.
+Wiggle Responsibly.
  ____  _  _  ____     _____  _   _     ____  ____  ___  ____ 
 ( ___)( \/ )( ___)___(  _  )( )_( )___(  _ \(_  _)/ __)( ___)
  )__)  \  /  )__)(___))(_)(  ) _ ((___))(_) )_)(_( (__  )__) 
