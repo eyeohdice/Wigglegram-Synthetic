@@ -3,119 +3,91 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WIGGLE RIG — Bullet-Time Splat Exporter</title>
+<title>WIGGLE RIG — Stage 1: PlayCanvas engine test</title>
 <style>
 :root{
-  --bg:#eae7df;
-  --panel:#f6f4ef;
-  --panel2:#e6e2d7;
-  --line:#171717;
-  --line-soft:#d8d4c8;
-  --accent:#ff4419;
-  --accent-ink:#fff7f2;
-  --text:#171717;
-  --text-dim:#726e63;
-  --rec:#e8402c;
-  --screen:#141414;
-  --screen-text:#f2f0ea;
-  --screen-dim:#8b887d;
+  --bg:#eae7df; --panel:#f6f4ef; --panel2:#e6e2d7; --line:#171717; --line-soft:#d8d4c8;
+  --accent:#ff4419; --accent-ink:#fff7f2; --text:#171717; --text-dim:#726e63;
+  --screen:#141414; --screen-text:#f2f0ea; --screen-dim:#8b887d;
   --mono: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
   --disp: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-  --r: 3px;
 }
 *{box-sizing:border-box;}
 html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:var(--mono);overflow:hidden;}
 #app{display:flex;height:100vh;width:100vw;}
-
-/* ---------- viewport ("screen") ---------- */
 .viewport-pane{flex:1;position:relative;min-width:0;background:var(--screen);}
-#glcanvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab;z-index:1;}
+#glcanvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab;}
 #glcanvas:active{cursor:grabbing;}
-.bg-layer{position:absolute;inset:0;width:100%;height:100%;z-index:0;}
-.bg-color-layer{background:#000000;}
-.bg-photo-layer{display:none;pointer-events:none;}
-.bg-photo-layer.on{display:block;}
-.bg-photo-layer.adjustable{pointer-events:auto;cursor:grab;}
-.bg-photo-layer.adjustable:active{cursor:grabbing;}
+#glcanvas.pivot-mode{cursor:crosshair;}
+.hud{position:absolute;top:14px;left:16px;font-size:11px;letter-spacing:.08em;color:var(--screen-dim);line-height:1.7;pointer-events:none;}
+.hud b{color:var(--screen-text);}
+.drop-hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--screen-dim);pointer-events:none;}
+.drop-hint b{color:var(--screen-text);font-family:var(--disp);font-weight:800;text-transform:uppercase;font-size:14px;}
+.drop-hint.hidden{display:none;}
+.dial-wrap{position:absolute;left:20px;bottom:20px;width:150px;height:150px;}
+.dial-ring{position:absolute;inset:0;border:1px solid var(--screen-dim);border-radius:50%;}
+.dial-btn{position:absolute;width:40px;height:24px;transform:translate(-50%,-50%);background:var(--panel);border:1px solid var(--line);border-radius:3px;color:var(--text-dim);font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;cursor:pointer;text-transform:uppercase;}
+.dial-btn:hover{border-color:var(--accent);color:var(--accent);}
+.dial-btn.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
+.dial-btn.front{left:50%;top:4px;}
+.dial-btn.right{left:calc(100% - 4px);top:50%;width:36px;}
+.dial-btn.back{left:50%;top:calc(100% - 4px);}
+.dial-btn.left{left:4px;top:50%;width:36px;}
+.dial-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;gap:3px;}
+.dial-center .dial-btn{position:static;transform:none;width:34px;height:18px;font-size:8.5px;}
 
-.reticle{position:absolute;inset:18px;pointer-events:none;z-index:3;}
-.reticle span{position:absolute;width:20px;height:20px;opacity:.9;}
-.reticle .tl{top:0;left:0;border-top:1.5px solid var(--accent);border-left:1.5px solid var(--accent);}
-.reticle .tr{top:0;right:0;border-top:1.5px solid var(--accent);border-right:1.5px solid var(--accent);}
-.reticle .bl{bottom:0;left:0;border-bottom:1.5px solid var(--accent);border-left:1.5px solid var(--accent);}
-.reticle .br{bottom:0;right:0;border-bottom:1.5px solid var(--accent);border-right:1.5px solid var(--accent);}
+.panel{width:320px;flex-shrink:0;background:var(--panel);border-left:1px solid var(--line);overflow-y:auto;padding:16px;}
+.panel h1{font-family:var(--disp);font-weight:800;font-size:13px;letter-spacing:.1em;text-transform:uppercase;margin:0 0 4px;}
+.panel .sub{font-size:10px;color:var(--text-dim);margin-bottom:16px;}
+.drop-zone{border:1.5px dashed var(--line);border-radius:3px;padding:16px;text-align:center;cursor:pointer;margin-bottom:14px;}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--accent);background:rgba(255,68,25,.05);}
+.drop-zone b{display:block;font-family:var(--disp);font-weight:800;text-transform:uppercase;font-size:12px;}
+.drop-zone span{display:block;margin-top:4px;font-size:10px;color:var(--text-dim);}
+.file-meta{font-size:10px;color:var(--text-dim);line-height:1.6;margin-bottom:14px;}
+.file-meta b{color:var(--accent);}
+.check-row{display:flex;align-items:center;justify-content:space-between;font-size:10.5px;letter-spacing:.05em;color:var(--text-dim);text-transform:uppercase;margin-bottom:12px;}
+.check-row input{accent-color:var(--accent);}
+.btn{width:100%;padding:10px;background:var(--panel2);border:1px solid var(--line);border-radius:3px;color:var(--text);font-family:var(--disp);font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:11.5px;cursor:pointer;margin-bottom:8px;}
+.btn:hover{border-color:var(--accent);color:var(--accent);}
+.btn.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
+.hint{font-size:9.5px;color:var(--text-dim);line-height:1.5;margin-bottom:14px;}
+.log{font-size:9.5px;color:var(--text-dim);border-top:1px solid var(--line-soft);padding-top:10px;margin-top:10px;line-height:1.6;max-height:200px;overflow-y:auto;white-space:pre-wrap;}
 
-.hud-top{position:absolute;top:18px;left:50%;transform:translateX(-50%);display:flex;gap:18px;font-size:11px;letter-spacing:.12em;color:var(--screen-dim);pointer-events:none;z-index:3;}
-.hud-top b{color:var(--screen-text);font-weight:600;}
-.hud-title{position:absolute;top:16px;left:64px;font-family:var(--disp);font-weight:800;font-size:18px;letter-spacing:.02em;text-transform:uppercase;color:var(--screen-text);pointer-events:none;z-index:3;}
-.hud-title small{display:block;font-family:var(--mono);font-weight:400;font-size:10px;letter-spacing:.16em;color:var(--accent);margin-top:2px;}
-
-.drop-hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;color:var(--screen-dim);pointer-events:none;transition:opacity .2s;z-index:5;}
-.drop-hint .ring{width:60px;height:60px;border:1.5px solid var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--accent);}
-.drop-hint b{color:var(--screen-text);font-family:var(--disp);font-weight:800;letter-spacing:.03em;text-transform:uppercase;font-size:14px;}
-.drop-hint.hidden{opacity:0;visibility:hidden;}
-
-/* recording indicator */
-.rec-flag{position:absolute;top:18px;right:22px;display:none;align-items:center;gap:7px;font-size:11px;letter-spacing:.12em;color:var(--rec);z-index:3;}
+/* ---------- rec flag ---------- */
+.rec-flag{position:absolute;top:14px;right:16px;display:none;align-items:center;gap:7px;font-size:11px;letter-spacing:.12em;color:var(--rec, #e8402c);z-index:3;}
 .rec-flag.on{display:flex;}
-.rec-dot{width:8px;height:8px;border-radius:50%;background:var(--rec);animation:blink 1s infinite;}
+.rec-dot{width:8px;height:8px;border-radius:50%;background:var(--rec, #e8402c);animation:blink 1s infinite;}
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:.25;}}
 
-/* ---------- dial ---------- */
-.dial-wrap{position:absolute;left:24px;bottom:24px;width:168px;height:168px;z-index:4;}
-.dial-ring{position:absolute;inset:0;border:1px solid var(--screen-dim);border-radius:50%;background:rgba(246,244,239,.08);}
-.dial-btn{position:absolute;width:44px;height:26px;transform:translate(-50%,-50%);background:var(--panel);border:1px solid var(--line);border-radius:var(--r);color:var(--text-dim);font-family:var(--mono);font-size:10px;letter-spacing:.08em;cursor:pointer;transition:all .12s;text-transform:uppercase;}
-.dial-btn:hover{border-color:var(--accent);color:var(--accent);}
-.dial-btn.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700;}
-.dial-btn.front{left:50%;top:6px;}
-.dial-btn.right{left:calc(100% - 6px);top:50%;width:40px;}
-.dial-btn.back{left:50%;top:calc(100% - 6px);}
-.dial-btn.left{left:6px;top:50%;width:40px;}
-.dial-center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;gap:3px;}
-.dial-center .dial-btn{position:static;transform:none;width:38px;height:20px;font-size:9px;}
+/* ---------- arc visualizer ---------- */
+.dial-arc-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+.dial-arc-track{fill:none;stroke:var(--screen-dim);stroke-width:2;opacity:.4;}
+.dial-arc-fill{fill:none;stroke:var(--accent);stroke-width:3;stroke-linecap:round;}
+.dial-arc-center{fill:var(--accent);}
 
-/* ---------- control panel (device body) ---------- */
-.panel{width:340px;flex-shrink:0;background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;overflow-y:auto;}
-.panel::-webkit-scrollbar{width:6px;}
-.panel::-webkit-scrollbar-thumb{background:var(--line-soft);}
-.section{padding:16px 18px;border-bottom:1px solid var(--line-soft);}
-.section h2{font-family:var(--disp);font-weight:800;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--text);margin:0 0 12px;display:flex;align-items:center;gap:8px;}
+/* ---------- section divider ---------- */
+.section{border-top:1px solid var(--line-soft);padding-top:14px;margin-top:14px;}
+.section h2{font-family:var(--disp);font-weight:800;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text);margin:0 0 12px;display:flex;align-items:center;gap:8px;}
 .section h2::after{content:'';flex:1;height:1px;background:var(--line-soft);}
-.section h2 i{font-style:normal;color:var(--text-dim);font-size:10px;letter-spacing:.1em;}
-
-.drop-zone{border:1.5px dashed var(--line);border-radius:var(--r);padding:18px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;}
-.drop-zone:hover, .drop-zone.drag{border-color:var(--accent);background:rgba(255,68,25,.05);}
-.drop-zone b{display:block;font-family:var(--disp);font-weight:800;letter-spacing:.03em;text-transform:uppercase;font-size:12px;color:var(--text);}
-.drop-zone span{display:block;margin-top:6px;font-size:10.5px;color:var(--text-dim);}
-.file-meta{margin-top:10px;font-size:10.5px;color:var(--text-dim);line-height:1.6;}
-.file-meta b{color:var(--accent);}
-
 .field{margin-bottom:12px;}
 .field label{display:flex;justify-content:space-between;font-size:10.5px;letter-spacing:.05em;color:var(--text-dim);margin-bottom:5px;text-transform:uppercase;}
 .field label span{color:var(--accent);font-family:var(--mono);}
 .field input[type=range]{width:100%;accent-color:var(--accent);background:transparent;}
-.field select{width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:var(--r);padding:6px 8px;font-family:var(--mono);font-size:11px;}
-.check-row{display:flex;align-items:center;justify-content:space-between;font-size:10.5px;letter-spacing:.05em;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px;}
-.check-row input{accent-color:var(--accent);}
-.hint{font-size:9.5px;color:var(--text-dim);line-height:1.5;margin-top:6px;opacity:.85;}
+.field select{width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:3px;padding:6px 8px;font-family:var(--mono);font-size:11px;}
 
-.shutter{width:100%;padding:16px;background:var(--accent);border:1px solid var(--line);border-radius:var(--r);color:var(--accent-ink);font-family:var(--disp);font-weight:800;font-size:14px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;position:relative;overflow:hidden;transition:filter .15s;}
+/* ---------- shutter / progress ---------- */
+.shutter{width:100%;padding:15px;background:var(--accent);border:1px solid var(--line);border-radius:3px;color:var(--accent-ink);font-family:var(--disp);font-weight:800;font-size:13px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:filter .15s;}
 .shutter:hover{filter:brightness(1.08);}
 .shutter:disabled{background:var(--panel2);color:var(--text-dim);border-color:var(--line-soft);cursor:wait;}
 .progress-bar{height:3px;background:var(--panel2);margin-top:10px;overflow:hidden;border-radius:2px;}
 .progress-bar i{display:block;height:100%;width:0%;background:var(--accent);transition:width .1s linear;}
 .progress-label{font-size:10px;color:var(--text-dim);margin-top:6px;text-align:center;letter-spacing:.08em;}
 
-.filmstrip{display:flex;gap:3px;overflow-x:auto;padding:8px;background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);}
+/* ---------- filmstrip / output ---------- */
+.filmstrip{display:flex;gap:3px;overflow-x:auto;padding:8px;background:var(--panel2);border:1px solid var(--line);border-radius:3px;}
 .filmstrip img{height:44px;width:44px;object-fit:cover;flex-shrink:0;border-radius:2px;}
-.filmstrip::-webkit-scrollbar{height:5px;}
-.filmstrip::-webkit-scrollbar-thumb{background:var(--line-soft);}
-
-.output-preview{width:100%;border:1px solid var(--line);border-radius:var(--r);margin-top:10px;display:block;background:var(--panel2);}
-.dl-btn{display:block;width:100%;text-align:center;margin-top:10px;padding:12px;background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);color:var(--text);font-family:var(--disp);font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:12px;text-decoration:none;transition:all .15s;}
-.dl-btn:hover{border-color:var(--accent);color:var(--accent);}
-
-.empty-out{font-size:10.5px;color:var(--text-dim);text-align:center;padding:20px 6px;border:1.5px dashed var(--line-soft);border-radius:var(--r);}
+.output-preview{width:100%;border:1px solid var(--line);border-radius:3px;margin-top:10px;display:block;background:var(--panel2);}
+.empty-out{font-size:10.5px;color:var(--text-dim);text-align:center;padding:20px 6px;border:1.5px dashed var(--line-soft);border-radius:3px;}
 
 /* ---------- crop overlay ---------- */
 .crop-overlay{position:absolute;inset:0;pointer-events:none;z-index:2;display:none;}
@@ -137,34 +109,19 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
 .crop-handle.ne{right:-7px;top:-7px;cursor:nesw-resize;}
 .crop-handle.sw{left:-7px;bottom:-7px;cursor:nesw-resize;}
 .crop-handle.se{right:-7px;bottom:-7px;cursor:nwse-resize;}
-
 .ratio-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
-.ratio-chip{flex:1 1 auto;min-width:52px;padding:8px 4px;background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);color:var(--text-dim);font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;cursor:pointer;text-align:center;transition:all .12s;}
+.ratio-chip{flex:1 1 auto;min-width:52px;padding:8px 4px;background:var(--panel2);border:1px solid var(--line);border-radius:3px;color:var(--text-dim);font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;cursor:pointer;text-align:center;transition:all .12s;}
 .ratio-chip:hover{border-color:var(--accent);color:var(--accent);}
 .ratio-chip.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700;}
-
-/* ---------- pivot picking ---------- */
-.pivot-hint{position:absolute;top:60px;left:50%;transform:translateX(-50%);background:rgba(20,20,20,.9);border:1px solid var(--accent);color:var(--screen-text);font-size:11px;letter-spacing:.06em;padding:8px 14px;text-transform:uppercase;display:none;pointer-events:none;z-index:6;}
-.pivot-hint.on{display:block;}
-#glcanvas.pivot-mode{cursor:crosshair;}
-.pivot-btn{width:100%;padding:11px;background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);color:var(--text);font-family:var(--disp);font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:12px;cursor:pointer;transition:all .15s;margin-bottom:8px;}
-.pivot-btn:hover{border-color:var(--accent);color:var(--accent);}
-.pivot-btn.active{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);}
-
-::selection{background:var(--accent);color:var(--accent-ink);}
 </style>
 </head>
 <body>
 <div id="app">
-
   <div class="viewport-pane" id="viewportPane">
-    <div class="bg-layer bg-color-layer" id="bgColorLayer"></div>
-    <canvas class="bg-layer bg-photo-layer" id="bgPhotoCanvas"></canvas>    <canvas id="glcanvas"></canvas>
-
-    <div class="hud-title">WIGGLE RIG<small>bullet-time splat exporter</small></div>
-    <div class="hud-top"><span>AZ <b id="hudAz">0.0°</b></span><span>EL <b id="hudEl">0.0°</b></span><span>PTS <b id="hudPts">—</b></span></div>
+    <canvas id="glcanvas"></canvas>
+    <div class="hud" id="hud">AZ <b id="hudAz">0.0°</b>  EL <b id="hudEl">0.0°</b><br>PTS <b id="hudPts">—</b>  ENGINE <b>PlayCanvas</b></div>
     <div class="rec-flag" id="recFlag"><div class="rec-dot"></div>REC <span id="recCount">0/0</span></div>
-    <div class="reticle"><span class="tl"></span><span class="tr"></span><span class="bl"></span><span class="br"></span></div>
+    <div class="drop-hint" id="dropHint"><b>Load a .ply splat</b><div>drag &amp; drop, or use the panel →</div></div>
 
     <div class="crop-overlay" id="cropOverlay">
       <div class="crop-box" id="cropBox">
@@ -175,15 +132,12 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
       </div>
     </div>
 
-    <div class="pivot-hint" id="pivotHint">Click a point on the splat to set the rotation center</div>
-
-    <div class="drop-hint" id="dropHint">
-      <div class="ring">⬇</div>
-      <b>Load a .PLY splat</b>
-      <div style="font-size:10.5px;">drag &amp; drop anywhere, or use the panel →</div>
-    </div>
-
     <div class="dial-wrap">
+      <svg class="dial-arc-svg" viewBox="0 0 150 150">
+        <circle class="dial-arc-track" cx="75" cy="75" r="68"></circle>
+        <path class="dial-arc-fill" id="dialArcPath" d=""></path>
+        <circle class="dial-arc-center" id="dialArcCenter" cx="75" cy="7" r="3"></circle>
+      </svg>
       <div class="dial-ring"></div>
       <button class="dial-btn front" data-view="front">Front</button>
       <button class="dial-btn right" data-view="right">Right</button>
@@ -195,68 +149,47 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
       </div>
     </div>
   </div>
-
   <div class="panel">
+    <h1>Stage 2 — Wigglegram Export</h1>
+    <div class="sub">PlayCanvas native gsplat renderer</div>
 
-    <div class="section">
-      <h2>Load <i>.ply</i></h2>
-      <div class="drop-zone" id="dropZone">
-        <b>Drop or click to load</b>
-        <span>3D Gaussian Splat or colored point-cloud PLY</span>
-      </div>
-      <input type="file" id="fileInput" accept=".ply" style="display:none;">
-      <div class="file-meta" id="fileMeta">No file loaded yet.</div>
-      <div class="check-row" style="margin-top:12px;">
-        <span>SHARP / ml-splat axes (Y-down)</span>
-        <input type="checkbox" id="ydownToggle" checked>
-      </div>
-      <div class="hint">Front is pre-tuned for ml-sharp / SHARP exports, which use OpenCV axes (Y-down). Untick if your PLY is already Y-up.</div>
+    <div class="drop-zone" id="dropZone">
+      <b>Drop or click to load</b>
+      <span>.ply — 3D Gaussian Splat</span>
+    </div>
+    <input type="file" id="fileInput" accept=".ply" style="display:none;">
+    <div class="file-meta" id="fileMeta">No file loaded yet.</div>
+
+    <div class="check-row">
+      <span>SHARP / ml-splat axes (Y-down)</span>
+      <input type="checkbox" id="ydownToggle" checked>
+    </div>
+    <div class="check-row">
+      <span>Quick preview mode</span>
+      <input type="checkbox" id="previewToggle">
+    </div>
+    <div class="hint">Quick preview swaps in a subsampled version for smoother dragging. Full detail always loads and is what capture uses.</div>
+
+    <button class="btn" id="pivotBtn">◎ Set Rotation Center</button>
+    <div class="hint">Click a point on the splat to make it the orbit pivot.</div>
+    <button class="btn" id="resetViewBtn">Reset view</button>
+
+    <div class="field" style="margin-top:12px;"><label>Background</label>
+      <select id="bgColor">
+        <option value="#000000" selected>Black</option>
+        <option value="#0a0d0b">Studio green-black</option>
+        <option value="#ffffff">White</option>
+        <option value="#808080">Grey card</option>
+      </select>
     </div>
 
     <div class="section">
-      <h2>Frame</h2>
-      <div class="field"><label>Point size <span id="vPointSize">1.0</span></label><input type="range" id="pointSize" min="0.05" max="5" step="0.05" value="1.0"></div>
-      <div class="field"><label>Opacity <span id="vOpacity">1.0</span></label><input type="range" id="opacityMul" min="0.1" max="2" step="0.05" value="1.0"></div>
-      <div class="field"><label>Max points <span></span></label>
-        <select id="maxPoints">
-          <option value="0">Full — all points (can be slow)</option>
-          <option value="500000">500,000</option>
-          <option value="200000" selected>200,000</option>
-          <option value="100000">100,000</option>
-          <option value="50000">50,000</option>
-        </select>
-        <div class="hint">Full keeps every splat from the file for true photo quality. Depth-sorting that many splats each move is heavier, so dragging may feel a beat slower on very large scenes — capture itself is unaffected either way.</div>
-      </div>
-      <div class="field"><label>Background</label>
-        <select id="bgColor">
-          <option value="#000000" selected>Black</option>
-          <option value="#0a0d0b">Studio green-black</option>
-          <option value="#ffffff">White</option>
-          <option value="#808080">Grey card</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Original photo backdrop <span></span></label>
-        <div class="drop-zone" id="bgPhotoDropZone" style="padding:12px;">
-          <b style="font-size:12px;">Drop or click to add</b>
-          <span>Fills gaps in the splat with the source photo — doesn't move with the camera</span>
-        </div>
-        <input type="file" id="bgPhotoInput" accept="image/*" style="display:none;">
-        <div id="bgPhotoControls" style="display:none;">
-          <div class="field" style="margin-top:10px;"><label>Backdrop zoom <span id="vBgZoom">1.00×</span></label><input type="range" id="bgZoomRange" min="1" max="6" step="0.05" value="1"></div>
-          <button class="pivot-btn" id="bgAdjustBtn">✥ Drag to Align Photo</button>
-          <div class="hint">Turn this on, then drag directly on the viewer to slide the photo until it lines up with the splat — use zoom above if it's too small or too large. Scroll also zooms while dragging is on.</div>
-          <button class="dl-btn" id="resetBgPosBtn" style="width:100%;cursor:pointer;margin-top:8px;">Reset photo position</button>
-        </div>
-        <button class="dl-btn" id="removeBgPhotoBtn" style="width:100%;cursor:pointer;margin-top:8px;display:none;">Remove photo</button>
-        <div class="hint">Only fills pixels where the splat itself renders nothing — it's a static flat image, so it works best with small arcs kept close to the Front angle.</div>
-      </div>
-      <button class="dl-btn" id="resetViewBtn" style="width:100%;cursor:pointer;">Reset view</button>
-      <div style="margin-top:10px;">
-        <button class="pivot-btn" id="pivotBtn">◎ Set Rotation Center</button>
-        <div class="check-row"><span>Show center marker</span><input type="checkbox" id="showPivotToggle" checked></div>
-        <div class="hint">Click a splat point in the viewer to make it the pivot the arc rotates around, instead of the model's center. The marker never appears in exports.</div>
-      </div>
+      <h2>Rig</h2>
+      <div class="field"><label>Arc angle <span id="vArc">18°</span></label><input type="range" id="arcAngle" min="1" max="60" step="1" value="18"></div>
+      <div class="field"><label>Frames <span id="vFrames">14</span></label><input type="range" id="frameCount" min="4" max="36" step="1" value="14"></div>
+      <div class="field"><label>Playback speed <span id="vFps">12 fps</span></label><input type="range" id="fpsRange" min="4" max="30" step="1" value="12"></div>
+      <div class="check-row"><span>Ping-pong bounce loop</span><input type="checkbox" id="pingpongToggle" checked></div>
+      <div class="hint">The arc ring around the compass dial shows exactly what will sweep — it updates live as you drag the slider or orbit the camera.</div>
     </div>
 
     <div class="section">
@@ -279,16 +212,7 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
         </select>
       </div>
       <div class="hint" id="cropDimsHint">Output: 720 × 720px</div>
-      <button class="dl-btn" id="resetCropBtn" style="width:100%;cursor:pointer;margin-top:8px;">Reset crop</button>
-    </div>
-
-    <div class="section">
-      <h2>Rig</h2>
-      <div class="field"><label>Arc angle <span id="vArc">18°</span></label><input type="range" id="arcAngle" min="4" max="60" step="1" value="18"></div>
-      <div class="field"><label>Frames <span id="vFrames">14</span></label><input type="range" id="frameCount" min="4" max="36" step="1" value="14"></div>
-      <div class="field"><label>Playback speed <span id="vFps">12 fps</span></label><input type="range" id="fpsRange" min="4" max="30" step="1" value="12"></div>
-      <div class="check-row"><span>Ping-pong bounce loop</span><input type="checkbox" id="pingpongToggle" checked></div>
-      <div class="hint">Capture sweeps ± half the arc around your current camera angle — snap a Quick View first, fine-drag to taste, then shoot. Frame &amp; resolution come from the Crop panel above.</div>
+      <button class="btn" id="resetCropBtn">Reset crop</button>
     </div>
 
     <div class="section">
@@ -298,108 +222,159 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-famil
       <div class="progress-label" id="progressLabel">standing by</div>
     </div>
 
-    <div class="section" style="border-bottom:none;flex:1;">
+    <div class="section">
       <h2>Output</h2>
-      <div id="outputEmpty" class="empty-out">No export yet. Frames will appear here as a filmstrip, with the final GIF below.</div>
+      <div id="outputEmpty" class="empty-out">No export yet. Frames appear here as a filmstrip, GIF below.</div>
       <div id="filmstrip" class="filmstrip" style="display:none;"></div>
       <img id="outputImg" class="output-preview" style="display:none;">
       <a id="downloadLink" class="dl-btn" style="display:none;" download="wigglegram.gif">Download GIF</a>
     </div>
 
+    <div class="log" id="logBox">Waiting for PlayCanvas to initialize…</div>
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script>
-(function(){
-"use strict";
+<script type="importmap">
+
+{ "imports": { "playcanvas": "https://cdn.jsdelivr.net/npm/playcanvas/+esm" } }
+</script>
+<script type="module">
+import * as pc from "playcanvas";
+
+const logBox = document.getElementById('logBox');
+function log(msg){
+  const t = new Date().toLocaleTimeString();
+  logBox.textContent += `\n[${t}] ${msg}`;
+  logBox.scrollTop = logBox.scrollHeight;
+  console.log(msg);
+}
+log('PlayCanvas module loaded: ' + (pc.version || 'unknown version'));
+
+window.addEventListener('error', e=>{
+  log('JS ERROR: ' + (e.message||e) + (e.filename ? ' @ '+e.filename+':'+e.lineno : ''));
+});
+window.addEventListener('unhandledrejection', e=>{
+  log('UNHANDLED PROMISE REJECTION: ' + (e.reason && e.reason.message ? e.reason.message : e.reason));
+});
 
 /* ============================================================
-   THREE.JS SCENE SETUP
+   APP / CANVAS SETUP
    ============================================================ */
 const canvas = document.getElementById('glcanvas');
-const renderer = new THREE.WebGLRenderer({canvas, antialias:true, preserveDrawingBuffer:true, alpha:true});
-renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
-renderer.setClearColor(0x000000, 0); // fully transparent clear — gaps let the backdrop layer show through
-const scene = new THREE.Scene(); // no scene.background: backdrop is composited separately (color or photo)
-const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 2000);
+const pane = document.getElementById('viewportPane');
 
-const correctionGroup = new THREE.Group(); // handles Y-down/OpenCV axis fix
-scene.add(correctionGroup);
-const modelGroup = new THREE.Group();
-correctionGroup.add(modelGroup);
+// declared early: touched by resizeApp() during initial setup, well before
+// the crop UI module (further down) would otherwise define these.
+let currentRatio = null;
+let cropRect = null;
+let lastPaneW = 0, lastPaneH = 0;
+let cropEnabled = false;
 
-function resizeRenderer(){
-  const pane = document.getElementById('viewportPane');
+const app = new pc.Application(canvas, {
+  graphicsDeviceOptions: { antialias: true, alpha: true }
+});
+app.setCanvasFillMode(pc.FILLMODE_NONE);
+app.setCanvasResolution(pc.RESOLUTION_AUTO);
+
+function resizeApp(){
   const w = pane.clientWidth, h = pane.clientHeight;
-  renderer.setSize(w, h, true);
-  camera.aspect = w/h;
-  camera.updateProjectionMatrix();
-  if(typeof updateFovFactor === 'function') updateFovFactor();
+  canvas.width = w; canvas.height = h;
+  app.resizeCanvas(w, h);
+  if(cameraEntity) cameraEntity.camera.aspectRatio = w / h;
   if(typeof rescaleCropOnResize === 'function') rescaleCropOnResize();
-  if(typeof resizeBgPhotoCanvas === 'function') resizeBgPhotoCanvas();
 }
-window.addEventListener('resize', resizeRenderer);
+window.addEventListener('resize', resizeApp);
+
+app.start();
 
 /* ============================================================
-   ORBIT CAMERA (custom — no addons required)
+   CAMERA (custom orbit — same az/el/radius/target model as before)
    ============================================================ */
-const cam = { az:0, el:0, radius:3, target:new THREE.Vector3(0,0,0) };
-let animTween = null;
+const cameraEntity = new pc.Entity('camera');
+cameraEntity.addComponent('camera', {
+  clearColor: new pc.Color(0, 0, 0, 1),
+  nearClip: 0.01,
+  farClip: 2000,
+  fov: 45
+});
+app.root.addChild(cameraEntity);
+resizeApp();
+
+const cam = { az: 0, el: 0, radius: 3, target: new pc.Vec3(0, 0, 0) };
 
 function applyCamera(){
-  const azR = THREE.MathUtils.degToRad(cam.az);
-  const elR = THREE.MathUtils.degToRad(THREE.MathUtils.clamp(cam.el,-89.5,89.5));
+  const azR = cam.az * pc.math.DEG_TO_RAD;
+  const elClamped = Math.max(-89.5, Math.min(89.5, cam.el));
+  const elR = elClamped * pc.math.DEG_TO_RAD;
   const r = cam.radius;
-  camera.position.set(
-    cam.target.x + r*Math.cos(elR)*Math.sin(azR),
-    cam.target.y + r*Math.sin(elR),
-    cam.target.z + r*Math.cos(elR)*Math.cos(azR)
-  );
-  camera.up.set(0,1,0);
-  camera.lookAt(cam.target);
-  document.getElementById('hudAz').textContent = cam.az.toFixed(1)+'°';
-  document.getElementById('hudEl').textContent = cam.el.toFixed(1)+'°';
-  scheduleSort();
+  const x = cam.target.x + r * Math.cos(elR) * Math.sin(azR);
+  const y = cam.target.y + r * Math.sin(elR);
+  const z = cam.target.z + r * Math.cos(elR) * Math.cos(azR);
+  cameraEntity.setPosition(x, y, z);
+  cameraEntity.lookAt(cam.target.x, cam.target.y, cam.target.z);
+  document.getElementById('hudAz').textContent = cam.az.toFixed(1) + '°';
+  document.getElementById('hudEl').textContent = cam.el.toFixed(1) + '°';
+  if(typeof updateArcVisualizer === 'function') updateArcVisualizer();
+}
+applyCamera();
+
+/* ============================================================
+   ARC VISUALIZER — highlights the sweep on the compass dial
+   ============================================================ */
+function polarToXY(cx, cy, r, angleDeg){
+  const rad = angleDeg * Math.PI/180;
+  return { x: cx + r*Math.sin(rad), y: cy - r*Math.cos(rad) };
+}
+function updateArcVisualizer(){
+  const arcInputEl = document.getElementById('arcAngle');
+  if(!arcInputEl) return;
+  const arcDeg = parseFloat(arcInputEl.value);
+  const az0 = cam.az;
+  const cx=75, cy=75, r=68;
+  const start = polarToXY(cx, cy, r, az0 - arcDeg/2);
+  const end = polarToXY(cx, cy, r, az0 + arcDeg/2);
+  const largeArc = arcDeg > 180 ? 1 : 0;
+  const d = `M ${start.x.toFixed(2)} ${start.y.toFixed(2)} A ${r} ${r} 0 ${largeArc} 1 ${end.x.toFixed(2)} ${end.y.toFixed(2)}`;
+  const path = document.getElementById('dialArcPath');
+  if(path) path.setAttribute('d', d);
+  const center = polarToXY(cx, cy, r, az0);
+  const dot = document.getElementById('dialArcCenter');
+  if(dot){ dot.setAttribute('cx', center.x.toFixed(2)); dot.setAttribute('cy', center.y.toFixed(2)); }
 }
 
-function shortestAzDelta(from,to){
-  let d = ((to-from+540)%360)-180;
-  return d;
-}
-
+function shortestAzDelta(from, to){ return ((to - from + 540) % 360) - 180; }
+let camTween = null;
 function tweenTo(targetAz, targetEl, ms){
-  if(animTween) cancelAnimationFrame(animTween.raf);
+  if(camTween) cancelAnimationFrame(camTween);
   const startAz = cam.az, startEl = cam.el;
   const dAz = shortestAzDelta(startAz, targetAz);
   const dEl = targetEl - startEl;
   const t0 = performance.now();
   function step(now){
-    const t = Math.min(1,(now-t0)/ms);
-    const e = t<0.5 ? 2*t*t : -1+(4-2*t)*t; // easeInOutQuad
+    const t = Math.min(1, (now - t0) / ms);
+    const e = t < 0.5 ? 2*t*t : -1 + (4-2*t)*t;
     cam.az = startAz + dAz*e;
     cam.el = startEl + dEl*e;
     applyCamera();
-    if(t<1) animTween = {raf: requestAnimationFrame(step)};
-    else animTween = null;
+    if(t < 1) camTween = requestAnimationFrame(step); else camTween = null;
   }
-  animTween = {raf: requestAnimationFrame(step)};
+  camTween = requestAnimationFrame(step);
 }
 
 const QUICK_VIEWS = {
-  front:  ()=>({az:0,   el:0}),
-  right:  ()=>({az:90,  el:0}),
-  back:   ()=>({az:180, el:0}),
-  left:   ()=>({az:-90, el:0}),
-  top:    ()=>({az:cam.az, el:89}),
-  bottom: ()=>({az:cam.az, el:-89}),
+  front:  () => ({az:0,   el:0}),
+  right:  () => ({az:90,  el:0}),
+  back:   () => ({az:180, el:0}),
+  left:   () => ({az:-90, el:0}),
+  top:    () => ({az:cam.az, el:89}),
+  bottom: () => ({az:cam.az, el:-89}),
 };
 document.querySelectorAll('.dial-btn[data-view]').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     document.querySelectorAll('.dial-btn[data-view]').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
     const v = QUICK_VIEWS[btn.dataset.view]();
-    tweenTo(v.az, v.el, 420);
+    tweenTo(v.az, v.el, 400);
   });
 });
 document.getElementById('resetViewBtn').addEventListener('click', ()=>{
@@ -407,7 +382,6 @@ document.getElementById('resetViewBtn').addEventListener('click', ()=>{
   fitCameraToObject();
 });
 
-/* pointer drag */
 let dragging=false, lastX=0, lastY=0, downX=0, downY=0;
 canvas.addEventListener('pointerdown', e=>{
   dragging=true; lastX=e.clientX; lastY=e.clientY; downX=e.clientX; downY=e.clientY;
@@ -420,112 +394,24 @@ canvas.addEventListener('pointerup', e=>{
     pickPivotAt(e.clientX, e.clientY);
     setPivotPickMode(false);
   }
-  scheduleSort(true);
 });
 canvas.addEventListener('pointermove', e=>{
   if(!dragging || pivotPickMode) return;
   const dx = e.clientX-lastX, dy = e.clientY-lastY;
   lastX=e.clientX; lastY=e.clientY;
   cam.az -= dx*0.28;
-  cam.el = THREE.MathUtils.clamp(cam.el + dy*0.28, -89.5, 89.5);
+  cam.el = Math.max(-89.5, Math.min(89.5, cam.el + dy*0.28));
   document.querySelectorAll('.dial-btn[data-view]').forEach(b=>b.classList.remove('active'));
   applyCamera();
 });
 canvas.addEventListener('wheel', e=>{
   e.preventDefault();
-  cam.radius = THREE.MathUtils.clamp(cam.radius * (1+e.deltaY*0.001), 0.05, 500);
+  cam.radius = Math.max(0.05, Math.min(500, cam.radius * (1 + e.deltaY*0.001)));
   applyCamera();
-},{passive:false});
+}, {passive:false});
 
 /* ============================================================
-   ROTATION PIVOT PICKING
-   ============================================================ */
-let pivotPickMode = false;
-let pivotMarker = null;
-
-function ensurePivotMarker(){
-  if(pivotMarker) return;
-  const geo = new THREE.SphereGeometry(1, 14, 10);
-  const mat = new THREE.MeshBasicMaterial({color:0xff4419, wireframe:true, transparent:true, opacity:0.85, depthTest:false});
-  pivotMarker = new THREE.Mesh(geo, mat);
-  pivotMarker.renderOrder = 999;
-  scene.add(pivotMarker);
-}
-function updatePivotMarker(){
-  ensurePivotMarker();
-  const size = worldData ? Math.max(0.002, worldData.boundRadius*0.025) : 0.02;
-  pivotMarker.scale.setScalar(size);
-  pivotMarker.position.copy(cam.target);
-  const toggle = document.getElementById('showPivotToggle');
-  pivotMarker.visible = toggle ? toggle.checked : true;
-}
-
-function setPivotPickMode(on){
-  pivotPickMode = on;
-  document.getElementById('pivotBtn').classList.toggle('active', on);
-  document.getElementById('pivotHint').classList.toggle('on', on);
-  canvas.classList.toggle('pivot-mode', on);
-}
-document.getElementById('pivotBtn').addEventListener('click', ()=>{
-  setPivotPickMode(!pivotPickMode);
-});
-document.getElementById('showPivotToggle').addEventListener('change', ()=>{
-  if(pivotMarker) updatePivotMarker();
-});
-
-function pickPivotAt(clientX, clientY){
-  if(!worldData || !pointsObj) return;
-  const rect = canvas.getBoundingClientRect();
-  const ndcX = ((clientX-rect.left)/rect.width)*2-1;
-  const ndcY = -(((clientY-rect.top)/rect.height)*2-1);
-  const raycaster = new THREE.Raycaster();
-  raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), camera);
-
-  const invMat = new THREE.Matrix4().copy(modelGroup.matrixWorld).invert();
-  const o = raycaster.ray.origin.clone().applyMatrix4(invMat);
-  const dPoint = raycaster.ray.origin.clone().add(raycaster.ray.direction).applyMatrix4(invMat);
-  const d = dPoint.sub(o).normalize();
-
-  const {positions, count} = worldData;
-  const ox=o.x, oy=o.y, oz=o.z, dx0=d.x, dy0=d.y, dz0=d.z;
-
-  // pass 1: smallest perpendicular distance from the ray, over all points in front of the camera
-  let minDistSq = Infinity;
-  for(let i=0;i<count;i++){
-    const px=positions[i*3]-ox, py=positions[i*3+1]-oy, pz=positions[i*3+2]-oz;
-    const t = px*dx0+py*dy0+pz*dz0;
-    if(t<0) continue;
-    const cx=t*dx0, cy=t*dy0, cz=t*dz0;
-    const ex=px-cx, ey=py-cy, ez=pz-cz;
-    const distSq = ex*ex+ey*ey+ez*ez;
-    if(distSq<minDistSq) minDistSq=distSq;
-  }
-  if(minDistSq===Infinity) return;
-  // pass 2: among points reasonably close to that ray line, pick the one nearest the camera
-  const band = Math.max(minDistSq*4, 1e-10);
-  let bestT = Infinity, bestIdx = -1;
-  for(let i=0;i<count;i++){
-    const px=positions[i*3]-ox, py=positions[i*3+1]-oy, pz=positions[i*3+2]-oz;
-    const t = px*dx0+py*dy0+pz*dz0;
-    if(t<0) continue;
-    const cx=t*dx0, cy=t*dy0, cz=t*dz0;
-    const ex=px-cx, ey=py-cy, ez=pz-cz;
-    const distSq = ex*ex+ey*ey+ez*ez;
-    if(distSq<=band && t<bestT){ bestT=t; bestIdx=i; }
-  }
-  if(bestIdx===-1) return;
-
-  const localPoint = new THREE.Vector3(positions[bestIdx*3], positions[bestIdx*3+1], positions[bestIdx*3+2]);
-  const worldPoint = localPoint.applyMatrix4(modelGroup.matrixWorld);
-  const distToCam = camera.position.distanceTo(worldPoint);
-  cam.target.copy(worldPoint);
-  cam.radius = Math.max(0.02, distToCam);
-  applyCamera();
-  updatePivotMarker();
-}
-
-/* ============================================================
-   PLY PARSER
+   PLY PARSER (reused verbatim from the Three.js build — engine-agnostic)
    ============================================================ */
 const TYPE_SIZE = {
   char:1,uchar:1,int8:1,uint8:1,
@@ -546,26 +432,21 @@ function readerFor(type){
     default: return (dv,o,le)=>0;
   }
 }
-
 function parsePLY(buffer){
   const bytes = new Uint8Array(buffer);
-  // find "end_header\n"
   const headerMarker = "end_header";
-  let headerEnd = -1;
   const asciiChunk = new TextDecoder('ascii').decode(bytes.subarray(0, Math.min(bytes.length, 200000)));
   const markerIdx = asciiChunk.indexOf(headerMarker);
   if(markerIdx === -1) throw new Error('Not a valid PLY file (no end_header found)');
   let idx = markerIdx + headerMarker.length;
-  while(bytes[idx] === 13 || bytes[idx] === 10) idx++; // skip CR/LF
-  headerEnd = idx;
+  while(bytes[idx] === 13 || bytes[idx] === 10) idx++;
+  const headerEnd = idx;
   const headerText = asciiChunk.substring(0, markerIdx);
   const lines = headerText.split('\n').map(l=>l.trim()).filter(l=>l.length);
 
   let format = 'ascii';
   let vertexCount = 0;
-  let props = []; // {name,type}
-  let inVertexElement = false;
-  let otherElements = []; // to skip: {count, props}
+  let props = [];
   let currentEl = null;
 
   lines.forEach(line=>{
@@ -573,27 +454,21 @@ function parsePLY(buffer){
     if(parts[0]==='format'){ format = parts[1]; }
     else if(parts[0]==='element'){
       currentEl = {name:parts[1], count:parseInt(parts[2],10), props:[]};
-      if(parts[1]==='vertex'){ vertexCount = currentEl.count; inVertexElement=true; props = currentEl.props; }
-      else { inVertexElement=false; otherElements.push(currentEl); }
+      if(parts[1]==='vertex'){ vertexCount = currentEl.count; props = currentEl.props; }
     }
     else if(parts[0]==='property'){
       if(parts[1]==='list'){
-        // list property (e.g. faces) - only relevant for non-vertex elements we skip entirely
-        if(currentEl) currentEl.props.push({name:parts[4], type:parts[3], isList:true, countType:parts[2]});
+        if(currentEl) currentEl.props.push({name:parts[4], type:parts[3], isList:true});
       } else {
         if(currentEl) currentEl.props.push({name:parts[2], type:parts[1]});
       }
     }
   });
 
-  const wanted = ['x','y','z','red','green','blue','r','g','b','opacity','alpha',
-    'scale_0','scale_1','scale_2','rot_0','rot_1','rot_2','rot_3','f_dc_0','f_dc_1','f_dc_2'];
-
   const out = { count: vertexCount, x:null,y:null,z:null, red:null,green:null,blue:null,
     opacity:null, scale_0:null,scale_1:null,scale_2:null,
     rot_0:null,rot_1:null,rot_2:null,rot_3:null,
     f_dc_0:null,f_dc_1:null,f_dc_2:null, hasSplatFields:false, hasColor:false };
-  wanted.forEach(k=>{ if(out[k]===null && (k==='r'||k==='g'||k==='b')) return; });
   ['x','y','z','red','green','blue','opacity','scale_0','scale_1','scale_2','rot_0','rot_1','rot_2','rot_3','f_dc_0','f_dc_1','f_dc_2']
     .forEach(k=>{ out[k] = new Float32Array(vertexCount); });
 
@@ -603,9 +478,8 @@ function parsePLY(buffer){
     let ti = 0;
     for(let v=0; v<vertexCount; v++){
       for(let p=0; p<props.length; p++){
-        const name = props[p].name;
         const val = parseFloat(tokens[ti++]);
-        assignField(out, name, v, val);
+        assignField(out, props[p].name, v, val);
       }
     }
   } else {
@@ -650,20 +524,273 @@ function assignField(out, name, v, val){
   }
 }
 
-/* ============================================================
-   CROP OVERLAY (aspect-ratio presets + freeform drag)
-   ============================================================ */
-const RATIOS = {free:null, sq:1, ig:4/5, port:3/4, story:9/16, land:16/9};
-let currentRatio = null;
-let cropRect = null; // {x,y,w,h} in CSS px relative to viewportPane
-let lastPaneW = 0, lastPaneH = 0;
-let cropEnabled = false;
-
-function paneSizePx(){
-  const p = document.getElementById('viewportPane');
-  return {w:p.clientWidth, h:p.clientHeight};
+/* Build a subsampled binary PLY blob (standard splat property set) for quick-preview mode */
+function buildReducedPLYBlob(parsed, stride){
+  const total = parsed.count;
+  const n = Math.max(1, Math.floor(total/stride));
+  const props = ['x','y','z','opacity','scale_0','scale_1','scale_2','rot_0','rot_1','rot_2','rot_3','f_dc_0','f_dc_1','f_dc_2'];
+  const header = ['ply','format binary_little_endian 1.0',`element vertex ${n}`,
+    ...props.map(p=>`property float ${p}`),'end_header',''].join('\n');
+  const headerBytes = new TextEncoder().encode(header);
+  const dataBytes = new ArrayBuffer(n * props.length * 4);
+  const dv = new DataView(dataBytes);
+  let o = 0;
+  for(let i=0, src=0; i<n; i++, src+=stride){
+    for(const p of props){ dv.setFloat32(o, parsed[p][src], true); o += 4; }
+  }
+  const out = new Uint8Array(headerBytes.length + dataBytes.byteLength);
+  out.set(headerBytes, 0);
+  out.set(new Uint8Array(dataBytes), headerBytes.length);
+  return out.buffer;
 }
 
+/* ============================================================
+   SPLAT ENTITY HIERARCHY
+   correctionEntity (Y-down flip) > centerEntity (recenter to origin) > splat
+   ============================================================ */
+const correctionEntity = new pc.Entity('correction');
+app.root.addChild(correctionEntity);
+const centerEntity = new pc.Entity('center');
+correctionEntity.addChild(centerEntity);
+
+let worldData = null;      // {positions:Float32Array, count, boundRadius}
+let parsedForReload = null;
+let fullAsset = null, fullEntity = null;
+let previewAsset = null, previewEntity = null;
+let previewBuilt = false;
+
+correctionEntity.setEulerAngles(180, 0, 0); // Y-down default ON, matches checkbox
+
+document.getElementById('ydownToggle').addEventListener('change', e=>{
+  correctionEntity.setEulerAngles(e.target.checked ? 180 : 0, 0, 0);
+});
+
+async function loadGsplatFromUrl(url, name){
+  const asset = new pc.Asset(name, 'gsplat', {url});
+  app.assets.add(asset);
+  await new Promise((resolve, reject)=>{
+    asset.on('load', ()=>resolve());
+    asset.on('error', (err)=>reject(err || new Error('asset failed to load')));
+    app.assets.load(asset);
+  });
+  return asset;
+}
+
+async function handleFile(file){
+  log('handleFile called with: ' + file.name + ' (' + file.size + ' bytes)');
+  document.getElementById('fileMeta').textContent = 'Parsing ' + file.name + ' …';
+  const buffer = await file.arrayBuffer();
+  let parsed;
+  try{
+    parsed = parsePLY(buffer);
+  } catch(err){
+    alert('Could not parse this PLY: ' + err.message);
+    document.getElementById('fileMeta').textContent = 'Failed to parse ' + file.name;
+    return;
+  }
+  parsedForReload = parsed;
+
+  // centroid + bounding radius from raw positions (for framing + pivot picking)
+  const n = parsed.count;
+  let cx=0, cy=0, cz=0;
+  for(let i=0;i<n;i++){ cx+=parsed.x[i]; cy+=parsed.y[i]; cz+=parsed.z[i]; }
+  cx/=n; cy/=n; cz/=n;
+  let maxR = 0.001;
+  const positions = new Float32Array(n*3);
+  for(let i=0;i<n;i++){
+    const dx=parsed.x[i]-cx, dy=parsed.y[i]-cy, dz=parsed.z[i]-cz;
+    positions[i*3]=dx; positions[i*3+1]=dy; positions[i*3+2]=dz;
+    const d = Math.sqrt(dx*dx+dy*dy+dz*dz);
+    if(d>maxR) maxR=d;
+  }
+  worldData = {positions, count:n, boundRadius:maxR};
+  centerEntity.setLocalPosition(-cx, -cy, -cz);
+
+  // clean up any previous splat entities/assets
+  if(fullEntity){ fullEntity.destroy(); fullEntity=null; }
+  if(fullAsset){ app.assets.remove(fullAsset); fullAsset=null; }
+  if(previewEntity){ previewEntity.destroy(); previewEntity=null; }
+  if(previewAsset){ app.assets.remove(previewAsset); previewAsset=null; }
+  previewBuilt = false;
+  document.getElementById('previewToggle').checked = false;
+  document.getElementById('previewToggle').disabled = !parsed.hasSplatFields;
+
+  document.getElementById('fileMeta').textContent = 'Loading splat into PlayCanvas…';
+  try{
+    const blobUrl = URL.createObjectURL(new Blob([buffer], {type:'application/octet-stream'}));
+    fullAsset = await loadGsplatFromUrl(blobUrl, 'splat-full');
+    fullEntity = new pc.Entity('splat-full');
+    fullEntity.addComponent('gsplat', {asset: fullAsset});
+    centerEntity.addChild(fullEntity);
+
+    log(`Loaded ${n.toLocaleString()} splats via PlayCanvas gsplat component`);
+    document.getElementById('hudPts').textContent = n.toLocaleString();
+    document.getElementById('dropHint').classList.add('hidden');
+    document.getElementById('fileMeta').innerHTML =
+      `<b>${file.name}</b><br>${n.toLocaleString()} verts<br>` +
+      (parsed.hasSplatFields ? 'Detected: 3D Gaussian Splat fields' : (parsed.hasColor ? 'Detected: colored point cloud (may not render via gsplat — see chat)' : 'Detected: geometry only'));
+    fitCameraToObject();
+  } catch(err){
+    log('ERROR loading gsplat asset: ' + (err && err.message ? err.message : err));
+    document.getElementById('fileMeta').textContent = 'PlayCanvas could not load this file — see log below.';
+  }
+}
+
+document.getElementById('previewToggle').addEventListener('change', async e=>{
+  if(!parsedForReload) return;
+  if(e.target.checked){
+    if(!previewBuilt){
+      log('Building subsampled preview asset…');
+      const stride = Math.max(1, Math.ceil(parsedForReload.count / 60000));
+      const reducedBuffer = buildReducedPLYBlob(parsedForReload, stride);
+      const blobUrl = URL.createObjectURL(new Blob([reducedBuffer], {type:'application/octet-stream'}));
+      try{
+        previewAsset = await loadGsplatFromUrl(blobUrl, 'splat-preview');
+        previewEntity = new pc.Entity('splat-preview');
+        previewEntity.addComponent('gsplat', {asset: previewAsset});
+        centerEntity.addChild(previewEntity);
+        previewBuilt = true;
+        log('Preview asset ready (~' + Math.floor(parsedForReload.count/stride).toLocaleString() + ' splats)');
+      } catch(err){
+        log('ERROR building preview: ' + (err && err.message ? err.message : err));
+        e.target.checked = false;
+        return;
+      }
+    }
+    if(fullEntity) fullEntity.enabled = false;
+    if(previewEntity) previewEntity.enabled = true;
+  } else {
+    if(previewEntity) previewEntity.enabled = false;
+    if(fullEntity) fullEntity.enabled = true;
+  }
+});
+
+function fitCameraToObject(){
+  if(!worldData) return;
+  cam.target.set(0,0,0);
+  cam.radius = Math.max(0.2, worldData.boundRadius*2.6);
+  cam.az = 0; cam.el = 0;
+  applyCamera();
+}
+
+/* ============================================================
+   FILE LOADING UI
+   ============================================================ */
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+log('Drop zone found: ' + !!dropZone + ' | File input found: ' + !!fileInput);
+dropZone.addEventListener('click', ()=>{
+  log('Drop zone clicked — opening file picker…');
+  fileInput.click();
+});
+fileInput.addEventListener('change', e=>{
+  log('File input changed, files: ' + e.target.files.length);
+  if(e.target.files[0]) handleFile(e.target.files[0]);
+});
+['dragenter','dragover'].forEach(evt=>document.body.addEventListener(evt, e=>{ e.preventDefault(); dropZone.classList.add('drag'); }));
+['dragleave','drop'].forEach(evt=>document.body.addEventListener(evt, e=>{ e.preventDefault(); dropZone.classList.remove('drag'); }));
+document.body.addEventListener('drop', e=>{
+  e.preventDefault();
+  const f = e.dataTransfer.files[0];
+  if(f && /\.ply$/i.test(f.name)) handleFile(f);
+  else if(f) alert('Please drop a .ply file.');
+});
+
+/* ============================================================
+   ROTATION PIVOT PICKING
+   ============================================================ */
+let pivotPickMode = false;
+function setPivotPickMode(on){
+  pivotPickMode = on;
+  document.getElementById('pivotBtn').classList.toggle('active', on);
+  canvas.classList.toggle('pivot-mode', on);
+}
+document.getElementById('pivotBtn').addEventListener('click', ()=>setPivotPickMode(!pivotPickMode));
+
+function pickPivotAt(clientX, clientY){
+  if(!worldData) return;
+  const rect = canvas.getBoundingClientRect();
+  const sx = (clientX - rect.left) * (canvas.width / rect.width);
+  const sy = (clientY - rect.top) * (canvas.height / rect.height);
+
+  const camComp = cameraEntity.camera;
+  const nearP = new pc.Vec3(), farP = new pc.Vec3();
+  camComp.screenToWorld(sx, sy, camComp.nearClip, nearP);
+  camComp.screenToWorld(sx, sy, camComp.farClip, farP);
+  const dir = new pc.Vec3().sub2(farP, nearP).normalize();
+
+  // ray into centerEntity's local space (positions are stored relative to centroid, in that space)
+  const inv = centerEntity.getWorldTransform().clone().invert();
+  const localOrigin = new pc.Vec3(); inv.transformPoint(nearP, localOrigin);
+  const localDirPoint = new pc.Vec3(); inv.transformPoint(new pc.Vec3(nearP.x+dir.x, nearP.y+dir.y, nearP.z+dir.z), localDirPoint);
+  const ldx = localDirPoint.x-localOrigin.x, ldy = localDirPoint.y-localOrigin.y, ldz = localDirPoint.z-localOrigin.z;
+  const llen = Math.sqrt(ldx*ldx+ldy*ldy+ldz*ldz) || 1;
+  const dX=ldx/llen, dY=ldy/llen, dZ=ldz/llen;
+  const oX=localOrigin.x, oY=localOrigin.y, oZ=localOrigin.z;
+
+  const {positions, count} = worldData;
+  let minDistSq = Infinity;
+  for(let i=0;i<count;i++){
+    const px=positions[i*3]-oX, py=positions[i*3+1]-oY, pz=positions[i*3+2]-oZ;
+    const t = px*dX+py*dY+pz*dZ;
+    if(t<0) continue;
+    const ex=px-t*dX, ey=py-t*dY, ez=pz-t*dZ;
+    const d2 = ex*ex+ey*ey+ez*ez;
+    if(d2<minDistSq) minDistSq=d2;
+  }
+  if(minDistSq===Infinity) return;
+  const band = Math.max(minDistSq*4, 1e-10);
+  let bestT=Infinity, bestIdx=-1;
+  for(let i=0;i<count;i++){
+    const px=positions[i*3]-oX, py=positions[i*3+1]-oY, pz=positions[i*3+2]-oZ;
+    const t = px*dX+py*dY+pz*dZ;
+    if(t<0) continue;
+    const ex=px-t*dX, ey=py-t*dY, ez=pz-t*dZ;
+    const d2 = ex*ex+ey*ey+ez*ez;
+    if(d2<=band && t<bestT){ bestT=t; bestIdx=i; }
+  }
+  if(bestIdx===-1) return;
+
+  const localPoint = new pc.Vec3(positions[bestIdx*3], positions[bestIdx*3+1], positions[bestIdx*3+2]);
+  const worldPoint = new pc.Vec3();
+  centerEntity.getWorldTransform().transformPoint(localPoint, worldPoint);
+  const distToCam = cameraEntity.getPosition().distance(worldPoint);
+  cam.target.copy(worldPoint);
+  cam.radius = Math.max(0.02, distToCam);
+  applyCamera();
+  log(`Pivot set at (${worldPoint.x.toFixed(3)}, ${worldPoint.y.toFixed(3)}, ${worldPoint.z.toFixed(3)})`);
+}
+
+/* ============================================================
+   RIG CONTROLS
+   ============================================================ */
+const arcInput = document.getElementById('arcAngle');
+arcInput.addEventListener('input', ()=>{
+  document.getElementById('vArc').textContent = arcInput.value + '°';
+  updateArcVisualizer();
+});
+const frameCountInput = document.getElementById('frameCount');
+frameCountInput.addEventListener('input', ()=>document.getElementById('vFrames').textContent = frameCountInput.value);
+const fpsInput = document.getElementById('fpsRange');
+fpsInput.addEventListener('input', ()=>document.getElementById('vFps').textContent = fpsInput.value + ' fps');
+
+document.getElementById('bgColor').addEventListener('change', e=>{
+  cameraEntity.camera.clearColor = hexToColor(e.target.value);
+});
+function hexToColor(hex){
+  const h = hex.replace('#','');
+  const r = parseInt(h.substring(0,2),16)/255;
+  const g = parseInt(h.substring(2,4),16)/255;
+  const b = parseInt(h.substring(4,6),16)/255;
+  return new pc.Color(r,g,b,1);
+}
+
+/* ============================================================
+   CROP OVERLAY (same math/behavior as the Three.js build)
+   ============================================================ */
+const RATIOS = {free:null, sq:1, ig:4/5, port:3/4, story:9/16, land:16/9};
+
+function paneSizePx(){ return {w:pane.clientWidth, h:pane.clientHeight}; }
 function clampNum(v,mn,mx){ return Math.min(mx, Math.max(mn, v)); }
 
 function setCropEnabled(on){
@@ -672,45 +799,35 @@ function setCropEnabled(on){
   document.getElementById('cropEnableToggle').checked = on;
   updateCropDOM();
 }
-
 function updateCropDOM(){
   if(!cropRect) return;
   const box = document.getElementById('cropBox');
-  box.style.left = cropRect.x+'px';
-  box.style.top = cropRect.y+'px';
-  box.style.width = cropRect.w+'px';
-  box.style.height = cropRect.h+'px';
+  box.style.left = cropRect.x+'px'; box.style.top = cropRect.y+'px';
+  box.style.width = cropRect.w+'px'; box.style.height = cropRect.h+'px';
   const dims = getExportDims();
   document.getElementById('cropDimsHint').textContent =
     (cropEnabled ? 'Output: ' : 'Crop off — full frame: ') + dims.w+' × '+dims.h+'px';
 }
-
 function getEffectiveRatio(){
   if(cropEnabled && cropRect) return cropRect.w/cropRect.h;
   const {w,h} = paneSizePx();
   return h>0 ? w/h : 1;
 }
-
 function getExportDims(){
   const target = parseInt(document.getElementById('exportSizeSelect').value, 10) || 720;
   const ratio = getEffectiveRatio();
   let w,h;
-  if(ratio>=1){ w=target; h=Math.round(target/ratio); }
-  else { h=target; w=Math.round(target*ratio); }
-  w = Math.max(2, w - (w%2));
-  h = Math.max(2, h - (h%2));
+  if(ratio>=1){ w=target; h=Math.round(target/ratio); } else { h=target; w=Math.round(target*ratio); }
+  w = Math.max(2, w - (w%2)); h = Math.max(2, h - (h%2));
   return {w,h};
 }
-
 function fitCropToRatio(ratio){
   const {w:pw,h:ph} = paneSizePx();
   const margin = 0.92;
   let w,h;
-  if(pw/ph > ratio){ h = ph*margin; w = h*ratio; }
-  else { w = pw*margin; h = w/ratio; }
+  if(pw/ph > ratio){ h = ph*margin; w = h*ratio; } else { w = pw*margin; h = w/ratio; }
   cropRect = {x:(pw-w)/2, y:(ph-h)/2, w, h};
 }
-
 function initCropDefault(){
   const {w,h} = paneSizePx();
   if(w<=0||h<=0) return;
@@ -721,7 +838,6 @@ function initCropDefault(){
   document.querySelectorAll('.ratio-chip').forEach(b=>b.classList.toggle('active', b.dataset.ratio==='free'));
   updateCropDOM();
 }
-
 function rescaleCropOnResize(){
   const {w,h} = paneSizePx();
   if(!cropRect || w<=0 || h<=0) return;
@@ -732,10 +848,7 @@ function rescaleCropOnResize(){
   lastPaneW = w; lastPaneH = h;
   updateCropDOM();
 }
-
-document.getElementById('cropEnableToggle').addEventListener('change', e=>{
-  setCropEnabled(e.target.checked);
-});
+document.getElementById('cropEnableToggle').addEventListener('change', e=>setCropEnabled(e.target.checked));
 document.querySelectorAll('.ratio-chip').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     document.querySelectorAll('.ratio-chip').forEach(b=>b.classList.remove('active'));
@@ -746,15 +859,11 @@ document.querySelectorAll('.ratio-chip').forEach(btn=>{
   });
 });
 document.getElementById('exportSizeSelect').addEventListener('change', updateCropDOM);
-document.getElementById('resetCropBtn').addEventListener('click', ()=>{
-  initCropDefault();
-});
+document.getElementById('resetCropBtn').addEventListener('click', initCropDefault);
 
-/* drag to move / resize */
 let cropDrag = null;
 function beginCropDrag(mode, e){
-  e.stopPropagation();
-  e.preventDefault();
+  e.stopPropagation(); e.preventDefault();
   cropDrag = {mode, startX:e.clientX, startY:e.clientY, startRect:{...cropRect}};
   window.addEventListener('pointermove', onCropDragMove);
   window.addEventListener('pointerup', onCropDragEnd);
@@ -765,29 +874,21 @@ function onCropDragMove(e){
   const dx = e.clientX-cropDrag.startX, dy = e.clientY-cropDrag.startY;
   const s = cropDrag.startRect;
   if(cropDrag.mode==='move'){
-    cropRect = {
-      x: clampNum(s.x+dx, 0, Math.max(0,pw-s.w)),
-      y: clampNum(s.y+dy, 0, Math.max(0,ph-s.h)),
-      w: s.w, h: s.h
-    };
+    cropRect = { x: clampNum(s.x+dx, 0, Math.max(0,pw-s.w)), y: clampNum(s.y+dy, 0, Math.max(0,ph-s.h)), w: s.w, h: s.h };
   } else {
     const anchorX = cropDrag.mode.includes('w') ? s.x+s.w : s.x;
     const anchorY = cropDrag.mode.includes('n') ? s.y+s.h : s.y;
     let cornerX = cropDrag.mode.includes('w') ? s.x+dx : s.x+s.w+dx;
     let cornerY = cropDrag.mode.includes('n') ? s.y+dy : s.y+s.h+dy;
-    cornerX = clampNum(cornerX, 0, pw);
-    cornerY = clampNum(cornerY, 0, ph);
-    let newW = Math.abs(cornerX-anchorX);
-    let newH = Math.abs(cornerY-anchorY);
+    cornerX = clampNum(cornerX, 0, pw); cornerY = clampNum(cornerY, 0, ph);
+    let newW = Math.abs(cornerX-anchorX), newH = Math.abs(cornerY-anchorY);
     if(currentRatio){
-      if(newW/Math.max(1,newH) > currentRatio){ newW = newH*currentRatio; }
-      else { newH = newW/currentRatio; }
+      if(newW/Math.max(1,newH) > currentRatio){ newW = newH*currentRatio; } else { newH = newW/currentRatio; }
     }
     newW = Math.max(40,newW); newH = Math.max(40,newH);
     let newX = cropDrag.mode.includes('w') ? anchorX-newW : anchorX;
     let newY = cropDrag.mode.includes('n') ? anchorY-newH : anchorY;
-    newX = clampNum(newX, 0, Math.max(0,pw-newW));
-    newY = clampNum(newY, 0, Math.max(0,ph-newH));
+    newX = clampNum(newX, 0, Math.max(0,pw-newW)); newY = clampNum(newY, 0, Math.max(0,ph-newH));
     cropRect = {x:newX, y:newY, w:newW, h:newH};
   }
   updateCropDOM();
@@ -798,591 +899,16 @@ function onCropDragEnd(){
   window.removeEventListener('pointerup', onCropDragEnd);
 }
 document.getElementById('cropBox').addEventListener('pointerdown', e=>{
-  if(e.target.classList.contains('crop-handle')) return; // handled separately
+  if(e.target.classList.contains('crop-handle')) return;
   beginCropDrag('move', e);
 });
 document.querySelectorAll('.crop-handle').forEach(h=>{
-  h.addEventListener('pointerdown', e=> beginCropDrag(h.dataset.corner, e));
+  h.addEventListener('pointerdown', e=>beginCropDrag(h.dataset.corner, e));
 });
 
 /* ============================================================
-   RENDER MATERIALS
-   Two paths:
-     - True 3D Gaussian Splat data (opacity, scale_0..2, f_dc_0..2): rendered as
-       camera-facing ellipses built from the real per-splat covariance
-       (rotation quaternion + anisotropic scale), projected with the
-       standard EWA/Jacobian approximation used by 3DGS renderers. This
-       is what gives the smooth "photo" look instead of a point cloud.
-     - Plain colored point clouds (no scale/rotation data): rendered as
-       simple circular billboards, since there is no shape data to work with.
-   ============================================================ */
-const SH_C0 = 0.28209479177387814;
-
-/* ---- fallback: plain point cloud (circular billboards) ---- */
-const pcUniforms = {
-  uOpacityMul: {value: 1.0},
-  uFixedPixelSize: {value: 6.0},
-  uPointScale: {value: 1.0}
-};
-const pcMaterial = new THREE.ShaderMaterial({
-  uniforms: pcUniforms,
-  vertexShader: `
-    attribute float aAlpha;
-    attribute vec3 aColor;
-    varying vec3 vColor;
-    varying float vAlpha;
-    uniform float uFixedPixelSize;
-    uniform float uPointScale;
-    void main(){
-      vColor = aColor;
-      vAlpha = aAlpha;
-      vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-      gl_PointSize = clamp(uFixedPixelSize * uPointScale, 1.0, 400.0);
-      gl_Position = projectionMatrix * mvPosition;
-    }
-  `,
-  fragmentShader: `
-    varying vec3 vColor;
-    varying float vAlpha;
-    uniform float uOpacityMul;
-    void main(){
-      vec2 d = gl_PointCoord - vec2(0.5);
-      float r2 = dot(d,d);
-      if(r2 > 0.25) discard;
-      float falloff = exp(-r2 * 12.0);
-      float a = vAlpha * uOpacityMul * falloff;
-      if(a < 0.02) discard;
-      gl_FragColor = vec4(vColor, a);
-    }
-  `,
-  transparent: true, depthWrite: false, blending: THREE.NormalBlending
-});
-
-/* ---- real gaussian splat: anisotropic ellipse renderer ---- */
-const ellipseUniforms = {
-  uFocalX: {value: 500.0},
-  uFocalY: {value: 500.0},
-  uViewport: {value: new THREE.Vector2(800,800)},
-  uPointScale: {value: 1.0},
-  uOpacityMul: {value: 1.0}
-};
-const ellipseMaterial = new THREE.ShaderMaterial({
-  uniforms: ellipseUniforms,
-  vertexShader: `
-    precision highp float;
-    attribute vec2 aCorner;
-    attribute vec3 instancePosition;
-    attribute vec3 instanceColor;
-    attribute float instanceAlpha;
-    attribute vec3 instanceScale;
-    attribute vec4 instanceQuat;
-
-    uniform float uFocalX;
-    uniform float uFocalY;
-    uniform vec2 uViewport;
-    uniform float uPointScale;
-
-    varying vec3 vColor;
-    varying float vAlpha;
-    varying vec2 vLocal;
-
-    mat3 transpose3(mat3 m){
-      return mat3(m[0][0], m[1][0], m[2][0],
-                  m[0][1], m[1][1], m[2][1],
-                  m[0][2], m[1][2], m[2][2]);
-    }
-
-    void main(){
-      vColor = instanceColor;
-      vAlpha = instanceAlpha;
-
-      vec4 mvPos = modelViewMatrix * vec4(instancePosition, 1.0);
-      float tz = mvPos.z;
-      if(tz > -0.05){ gl_Position = vec4(2.0,2.0,2.0,1.0); return; }
-
-      float qw = instanceQuat.x, qx = instanceQuat.y, qy = instanceQuat.z, qz = instanceQuat.w;
-      mat3 R = mat3(
-        1.0-2.0*(qy*qy+qz*qz), 2.0*(qx*qy+qz*qw), 2.0*(qx*qz-qy*qw),
-        2.0*(qx*qy-qz*qw), 1.0-2.0*(qx*qx+qz*qz), 2.0*(qy*qz+qx*qw),
-        2.0*(qx*qz+qy*qw), 2.0*(qy*qz-qx*qw), 1.0-2.0*(qx*qx+qy*qy)
-      );
-      vec3 sc = instanceScale * uPointScale;
-      mat3 S = mat3(sc.x,0.0,0.0, 0.0,sc.y,0.0, 0.0,0.0,sc.z);
-      mat3 M = R * S;
-      mat3 Vrk = M * transpose3(M);
-
-      mat3 W = mat3(modelViewMatrix);
-      float tx = mvPos.x, ty = mvPos.y;
-      mat3 J = mat3(
-        uFocalX/tz, 0.0, -(uFocalX*tx)/(tz*tz),
-        0.0, uFocalY/tz, -(uFocalY*ty)/(tz*tz),
-        0.0, 0.0, 0.0
-      );
-      mat3 T = W * J;
-      mat3 cov = transpose3(T) * Vrk * T;
-
-      float a = cov[0][0] + 0.3;
-      float b = cov[0][1];
-      float c = cov[1][1] + 0.3;
-
-      float mid = 0.5*(a+c);
-      float radius = sqrt(max(0.1, mid*mid - (a*c - b*b)));
-      float lambda1 = mid + radius;
-      float lambda2 = max(mid - radius, 0.05);
-
-      vec2 v1;
-      if(abs(b) > 0.0001){ v1 = normalize(vec2(b, lambda1 - a)); }
-      else { v1 = (a >= c) ? vec2(1.0,0.0) : vec2(0.0,1.0); }
-      vec2 v2 = vec2(-v1.y, v1.x);
-
-      const float SIGMA = 3.0;
-      vec2 majorAxis = v1 * sqrt(lambda1) * SIGMA;
-      vec2 minorAxis = v2 * sqrt(lambda2) * SIGMA;
-
-      vec2 offsetPx = aCorner.x*majorAxis + aCorner.y*minorAxis;
-      vec4 clipPos = projectionMatrix * vec4(mvPos.xyz, 1.0);
-      vec2 ndcOffset = offsetPx / (uViewport*0.5);
-      clipPos.xy += ndcOffset * clipPos.w;
-
-      vLocal = aCorner * SIGMA;
-      gl_Position = clipPos;
-    }
-  `,
-  fragmentShader: `
-    precision highp float;
-    varying vec3 vColor;
-    varying float vAlpha;
-    varying vec2 vLocal;
-    uniform float uOpacityMul;
-    void main(){
-      float A = -0.5*dot(vLocal, vLocal);
-      if(A < -8.0) discard;
-      float g = exp(A);
-      float a = vAlpha * uOpacityMul * g;
-      if(a < 0.01) discard;
-      gl_FragColor = vec4(vColor, a);
-    }
-  `,
-  transparent: true, depthWrite: false, blending: THREE.NormalBlending, side: THREE.DoubleSide
-});
-
-function updateFovFactor(){
-  const h = renderer.domElement.height, w = renderer.domElement.width;
-  const pm = camera.projectionMatrix.elements;
-  ellipseUniforms.uFocalX.value = pm[0] * (w/2);
-  ellipseUniforms.uFocalY.value = pm[5] * (h/2);
-  ellipseUniforms.uViewport.value.set(w,h);
-}
-
-let pointsObj = null;
-let usingEllipseRenderer = false;
-let worldData = null; // {positions, colors, alphas, count, scales3?, quats?} pre-subsample, pre-sort source
-let sortNeeded = false;
-
-function scheduleSort(force){
-  sortNeeded = true;
-  if(force) sortPointsByDepth();
-}
-
-function makeQuadGeometry(n){
-  const geo = new THREE.InstancedBufferGeometry();
-  const corners = new Float32Array([-1,-1, 1,-1, -1,1, 1,1]);
-  geo.setAttribute('aCorner', new THREE.BufferAttribute(corners, 2));
-  geo.setIndex(new THREE.BufferAttribute(new Uint16Array([0,1,2,2,1,3]), 1));
-  geo.instanceCount = n;
-  return geo;
-}
-
-function loadSplat(parsed, filename){
-  if(pointsObj){ modelGroup.remove(pointsObj); pointsObj.geometry.dispose(); }
-
-  const maxPts = parseInt(document.getElementById('maxPoints').value, 10);
-  const total = parsed.count;
-  let stride = 1;
-  if(maxPts > 0 && total > maxPts) stride = Math.ceil(total/maxPts);
-  const n = Math.floor(total/stride);
-
-  const positions = new Float32Array(n*3);
-  const colors = new Float32Array(n*3);
-  const alphas = new Float32Array(n);
-  usingEllipseRenderer = !!parsed.hasSplatFields;
-  const scales3 = usingEllipseRenderer ? new Float32Array(n*3) : null;
-  const quats = usingEllipseRenderer ? new Float32Array(n*4) : null;
-
-  let cx=0,cy=0,cz=0;
-  for(let i=0,src=0;i<n;i++,src+=stride){
-    const x=parsed.x[src], y=parsed.y[src], z=parsed.z[src];
-    positions[i*3]=x; positions[i*3+1]=y; positions[i*3+2]=z;
-    cx+=x; cy+=y; cz+=z;
-
-    let r,g,b;
-    if(parsed.hasSplatFields){
-      r = THREE.MathUtils.clamp(0.5 + SH_C0*parsed.f_dc_0[src], 0,1);
-      g = THREE.MathUtils.clamp(0.5 + SH_C0*parsed.f_dc_1[src], 0,1);
-      b = THREE.MathUtils.clamp(0.5 + SH_C0*parsed.f_dc_2[src], 0,1);
-    } else if(parsed.hasColor){
-      r = parsed.red[src]; g = parsed.green[src]; b = parsed.blue[src];
-      if(r>1.5||g>1.5||b>1.5){ r/=255; g/=255; b/=255; }
-    } else {
-      r=g=b=0.75;
-    }
-    colors[i*3]=r; colors[i*3+1]=g; colors[i*3+2]=b;
-
-    let alphaVal;
-    if(parsed.hasSplatFields){
-      alphaVal = 1/(1+Math.exp(-parsed.opacity[src])); // sigmoid
-    } else {
-      alphaVal = 1.0;
-    }
-    alphas[i]=alphaVal;
-
-    if(usingEllipseRenderer){
-      const s0=Math.exp(parsed.scale_0[src]), s1=Math.exp(parsed.scale_1[src]), s2=Math.exp(parsed.scale_2[src]);
-      scales3[i*3]=s0; scales3[i*3+1]=s1; scales3[i*3+2]=s2;
-      let qw=parsed.rot_0[src], qx=parsed.rot_1[src], qy=parsed.rot_2[src], qz=parsed.rot_3[src];
-      let qn = Math.sqrt(qw*qw+qx*qx+qy*qy+qz*qz) || 1;
-      quats[i*4]=qw/qn; quats[i*4+1]=qx/qn; quats[i*4+2]=qy/qn; quats[i*4+3]=qz/qn;
-    }
-  }
-  cx/=n; cy/=n; cz/=n;
-  for(let i=0;i<n;i++){ positions[i*3]-=cx; positions[i*3+1]-=cy; positions[i*3+2]-=cz; }
-
-  worldData = {positions, colors, alphas, count:n, scales3, quats};
-
-  if(usingEllipseRenderer){
-    const geometry = makeQuadGeometry(n);
-    geometry.setAttribute('instancePosition', new THREE.InstancedBufferAttribute(positions.slice(), 3));
-    geometry.setAttribute('instanceColor', new THREE.InstancedBufferAttribute(colors.slice(), 3));
-    geometry.setAttribute('instanceAlpha', new THREE.InstancedBufferAttribute(alphas.slice(), 1));
-    geometry.setAttribute('instanceScale', new THREE.InstancedBufferAttribute(scales3.slice(), 3));
-    geometry.setAttribute('instanceQuat', new THREE.InstancedBufferAttribute(quats.slice(), 4));
-    pointsObj = new THREE.Mesh(geometry, ellipseMaterial);
-    pointsObj.frustumCulled = false;
-  } else {
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.BufferAttribute(positions.slice(), 3));
-    geometry.setAttribute('aColor', new THREE.BufferAttribute(colors.slice(), 3));
-    geometry.setAttribute('aAlpha', new THREE.BufferAttribute(alphas.slice(), 1));
-    pcUniforms.uFixedPixelSize.value = 6.0;
-    pointsObj = new THREE.Points(geometry, pcMaterial);
-  }
-  modelGroup.add(pointsObj);
-
-  // bounding radius for camera fit
-  let maxR = 0.001;
-  for(let i=0;i<n;i++){
-    const x=positions[i*3],y=positions[i*3+1],z=positions[i*3+2];
-    const d = Math.sqrt(x*x+y*y+z*z);
-    if(d>maxR) maxR=d;
-  }
-  worldData.boundRadius = maxR;
-
-  fitCameraToObject();
-  document.getElementById('dropHint').classList.add('hidden');
-  document.getElementById('hudPts').textContent = n.toLocaleString() + (stride>1 ? ` / ${total.toLocaleString()}` : '');
-  document.getElementById('fileMeta').innerHTML =
-    `<b>${filename}</b><br>${total.toLocaleString()} verts loaded${stride>1?` (shown: ${n.toLocaleString()})`:''}<br>` +
-    (parsed.hasSplatFields ? 'Detected: 3D Gaussian Splat fields (rendered as true ellipses)' : (parsed.hasColor ? 'Detected: colored point cloud' : 'Detected: geometry only (no color)'));
-}
-
-function fitCameraToObject(){
-  if(!worldData) return;
-  cam.target.set(0,0,0);
-  cam.radius = Math.max(0.2, worldData.boundRadius*2.6);
-  cam.az = 0; cam.el = 0;
-  applyCamera();
-  if(typeof updatePivotMarker === 'function') updatePivotMarker();
-}
-
-function sortPointsByDepth(){
-  if(!pointsObj || !worldData) return;
-  const {positions, colors, alphas, count, scales3, quats} = worldData;
-  // camera position in the OBJECT's local (pre-correction) space
-  const invMatrix = new THREE.Matrix4().copy(modelGroup.matrixWorld).invert();
-  const camLocal = camera.position.clone().applyMatrix4(invMatrix);
-
-  const dist = new Float32Array(count);
-  const idxArr = new Array(count);
-  for(let i=0;i<count;i++){
-    const dx = positions[i*3]-camLocal.x, dy = positions[i*3+1]-camLocal.y, dz = positions[i*3+2]-camLocal.z;
-    dist[i] = dx*dx+dy*dy+dz*dz;
-    idxArr[i]=i;
-  }
-  idxArr.sort((a,b)=>dist[b]-dist[a]); // far to near
-
-  const geometry = pointsObj.geometry;
-  if(usingEllipseRenderer){
-    const posAttr = geometry.getAttribute('instancePosition').array;
-    const colAttr = geometry.getAttribute('instanceColor').array;
-    const alAttr = geometry.getAttribute('instanceAlpha').array;
-    const scAttr = geometry.getAttribute('instanceScale').array;
-    const quAttr = geometry.getAttribute('instanceQuat').array;
-    for(let i=0;i<count;i++){
-      const src = idxArr[i];
-      posAttr[i*3]=positions[src*3]; posAttr[i*3+1]=positions[src*3+1]; posAttr[i*3+2]=positions[src*3+2];
-      colAttr[i*3]=colors[src*3]; colAttr[i*3+1]=colors[src*3+1]; colAttr[i*3+2]=colors[src*3+2];
-      alAttr[i]=alphas[src];
-      scAttr[i*3]=scales3[src*3]; scAttr[i*3+1]=scales3[src*3+1]; scAttr[i*3+2]=scales3[src*3+2];
-      quAttr[i*4]=quats[src*4]; quAttr[i*4+1]=quats[src*4+1]; quAttr[i*4+2]=quats[src*4+2]; quAttr[i*4+3]=quats[src*4+3];
-    }
-    geometry.getAttribute('instancePosition').needsUpdate = true;
-    geometry.getAttribute('instanceColor').needsUpdate = true;
-    geometry.getAttribute('instanceAlpha').needsUpdate = true;
-    geometry.getAttribute('instanceScale').needsUpdate = true;
-    geometry.getAttribute('instanceQuat').needsUpdate = true;
-  } else {
-    const posAttr = geometry.getAttribute('position').array;
-    const colAttr = geometry.getAttribute('aColor').array;
-    const alAttr = geometry.getAttribute('aAlpha').array;
-    for(let i=0;i<count;i++){
-      const src = idxArr[i];
-      posAttr[i*3]=positions[src*3]; posAttr[i*3+1]=positions[src*3+1]; posAttr[i*3+2]=positions[src*3+2];
-      colAttr[i*3]=colors[src*3]; colAttr[i*3+1]=colors[src*3+1]; colAttr[i*3+2]=colors[src*3+2];
-      alAttr[i]=alphas[src];
-    }
-    geometry.getAttribute('position').needsUpdate = true;
-    geometry.getAttribute('aColor').needsUpdate = true;
-    geometry.getAttribute('aAlpha').needsUpdate = true;
-  }
-  sortNeeded = false;
-}
-
-/* throttled sort while dragging/animating */
-let lastSortTime = 0;
-function maybeSort(now){
-  if(sortNeeded && now-lastSortTime > 140){
-    sortPointsByDepth();
-    lastSortTime = now;
-  }
-}
-
-/* ============================================================
-   FILE LOADING (drag/drop + click)
-   ============================================================ */
-const dropZone = document.getElementById('dropZone');
-const fileInput = document.getElementById('fileInput');
-dropZone.addEventListener('click', ()=>fileInput.click());
-fileInput.addEventListener('change', e=>{ if(e.target.files[0]) handleFile(e.target.files[0]); });
-
-['dragenter','dragover'].forEach(evt=>{
-  document.body.addEventListener(evt, e=>{ e.preventDefault(); dropZone.classList.add('drag'); });
-});
-['dragleave','drop'].forEach(evt=>{
-  document.body.addEventListener(evt, e=>{ e.preventDefault(); dropZone.classList.remove('drag'); });
-});
-document.body.addEventListener('drop', e=>{
-  e.preventDefault();
-  const f = e.dataTransfer.files[0];
-  if(f) handleFile(f);
-});
-
-function handleFile(file){
-  if(!/\.ply$/i.test(file.name)){ alert('Please load a .ply file.'); return; }
-  document.getElementById('fileMeta').textContent = 'Parsing ' + file.name + ' …';
-  const reader = new FileReader();
-  reader.onload = ()=>{
-    try{
-      const parsed = parsePLY(reader.result);
-      loadSplat(parsed, file.name);
-    } catch(err){
-      console.error(err);
-      alert('Could not parse this PLY: ' + err.message);
-      document.getElementById('fileMeta').textContent = 'Failed to parse ' + file.name;
-    }
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-document.getElementById('ydownToggle').addEventListener('change', e=>{
-  correctionGroup.rotation.x = e.target.checked ? Math.PI : 0;
-  scheduleSort(true);
-});
-correctionGroup.rotation.x = Math.PI; // default ON, matches checkbox checked
-
-document.getElementById('maxPoints').addEventListener('change', ()=>{
-  if(lastParsedForReload) loadSplat(lastParsedForReload, lastFilenameForReload);
-});
-let lastParsedForReload = null, lastFilenameForReload = null;
-const _origLoadSplat = loadSplat;
-loadSplat = function(parsed, filename){ lastParsedForReload = parsed; lastFilenameForReload = filename; _origLoadSplat(parsed, filename); };
-
-/* live sliders */
-const pointSizeInput = document.getElementById('pointSize');
-pointSizeInput.addEventListener('input', ()=>{
-  const v = parseFloat(pointSizeInput.value);
-  ellipseUniforms.uPointScale.value = v;
-  pcUniforms.uPointScale.value = v;
-  document.getElementById('vPointSize').textContent = v.toFixed(2);
-});
-const opacityInput = document.getElementById('opacityMul');
-opacityInput.addEventListener('input', ()=>{
-  const v = parseFloat(opacityInput.value);
-  ellipseUniforms.uOpacityMul.value = v;
-  pcUniforms.uOpacityMul.value = v;
-  document.getElementById('vOpacity').textContent = v.toFixed(2);
-});
-document.getElementById('bgColor').addEventListener('change', e=>{
-  document.getElementById('bgColorLayer').style.background = e.target.value;
-});
-document.getElementById('bgColorLayer').style.background = document.getElementById('bgColor').value;
-
-/* ============================================================
-   BACKGROUND PHOTO (gap-fill backdrop, with manual align since we
-   don't know the original photo's camera intrinsics — cover-fit alone
-   generally won't match the splat's scale/framing, so the user drags
-   to line it up instead)
-   ============================================================ */
-let bgPhotoImg = null; // loaded HTMLImageElement
-const bgPhoto = {zoom:1, panX:0, panY:0};
-let bgAdjustMode = false;
-
-/**
- * Draws `img` into a (dw x dh) destination, starting from a cover-fit crop
- * and then applying extra zoom (crops further in) and pan (slides the crop
- * window), clamped so the photo always fully covers the destination.
- * Shared by the live preview canvas and the GIF capture compositor so the
- * two always match exactly.
- */
-function drawBackdrop(ctx, img, dw, dh, zoom, panXFrac, panYFrac){
-  const ir = img.width/img.height, dr = dw/dh;
-  let sx,sy,sw,sh;
-  if(ir > dr){ sh = img.height; sw = sh*dr; sx = (img.width-sw)/2; sy = 0; }
-  else { sw = img.width; sh = sw/dr; sx = 0; sy = (img.height-sh)/2; }
-  const z = Math.max(1, zoom||1);
-  const zw = sw/z, zh = sh/z;
-  let cx = sx + sw/2 + panXFrac*sw;
-  let cy = sy + sh/2 + panYFrac*sh;
-  let nsx = cx - zw/2, nsy = cy - zh/2;
-  nsx = clampNum(nsx, 0, Math.max(0, img.width-zw));
-  nsy = clampNum(nsy, 0, Math.max(0, img.height-zh));
-  ctx.drawImage(img, nsx, nsy, zw, zh, 0, 0, dw, dh);
-}
-
-function resizeBgPhotoCanvas(){
-  const c = document.getElementById('bgPhotoCanvas');
-  const {w,h} = paneSizePx();
-  if(w<=0||h<=0) return;
-  const dpr = Math.min(window.devicePixelRatio||1, 2);
-  c.width = Math.round(w*dpr); c.height = Math.round(h*dpr);
-  redrawBgPhotoCanvas();
-}
-function redrawBgPhotoCanvas(){
-  if(!bgPhotoImg) return;
-  const c = document.getElementById('bgPhotoCanvas');
-  const ctx = c.getContext('2d');
-  ctx.clearRect(0,0,c.width,c.height);
-  drawBackdrop(ctx, bgPhotoImg, c.width, c.height, bgPhoto.zoom, bgPhoto.panX, bgPhoto.panY);
-}
-
-function loadBgPhoto(file){
-  const url = URL.createObjectURL(file);
-  const img = new Image();
-  img.onload = ()=>{
-    bgPhotoImg = img;
-    bgPhoto.zoom = 1; bgPhoto.panX = 0; bgPhoto.panY = 0;
-    document.getElementById('bgZoomRange').value = 1;
-    document.getElementById('vBgZoom').textContent = '1.00×';
-    document.getElementById('bgPhotoCanvas').classList.add('on');
-    document.getElementById('removeBgPhotoBtn').style.display = 'block';
-    document.getElementById('bgPhotoControls').style.display = 'block';
-    resizeBgPhotoCanvas();
-  };
-  img.onerror = ()=>{ alert('Could not load that image.'); };
-  img.src = url;
-}
-const bgPhotoDropZone = document.getElementById('bgPhotoDropZone');
-const bgPhotoInput = document.getElementById('bgPhotoInput');
-bgPhotoDropZone.addEventListener('click', ()=>bgPhotoInput.click());
-bgPhotoInput.addEventListener('change', e=>{ if(e.target.files[0]) loadBgPhoto(e.target.files[0]); });
-['dragenter','dragover'].forEach(evt=>bgPhotoDropZone.addEventListener(evt, e=>{ e.preventDefault(); e.stopPropagation(); bgPhotoDropZone.classList.add('drag'); }));
-['dragleave'].forEach(evt=>bgPhotoDropZone.addEventListener(evt, e=>{ e.preventDefault(); e.stopPropagation(); bgPhotoDropZone.classList.remove('drag'); }));
-bgPhotoDropZone.addEventListener('drop', e=>{
-  e.preventDefault(); e.stopPropagation();
-  bgPhotoDropZone.classList.remove('drag');
-  const f = e.dataTransfer.files[0];
-  if(f && f.type.startsWith('image/')) loadBgPhoto(f);
-});
-document.getElementById('removeBgPhotoBtn').addEventListener('click', ()=>{
-  bgPhotoImg = null;
-  setBgAdjustMode(false);
-  const c = document.getElementById('bgPhotoCanvas');
-  c.classList.remove('on');
-  c.getContext('2d').clearRect(0,0,c.width,c.height);
-  document.getElementById('removeBgPhotoBtn').style.display = 'none';
-  document.getElementById('bgPhotoControls').style.display = 'none';
-});
-
-document.getElementById('bgZoomRange').addEventListener('input', e=>{
-  bgPhoto.zoom = parseFloat(e.target.value);
-  document.getElementById('vBgZoom').textContent = bgPhoto.zoom.toFixed(2)+'×';
-  redrawBgPhotoCanvas();
-});
-document.getElementById('resetBgPosBtn').addEventListener('click', ()=>{
-  bgPhoto.zoom = 1; bgPhoto.panX = 0; bgPhoto.panY = 0;
-  document.getElementById('bgZoomRange').value = 1;
-  document.getElementById('vBgZoom').textContent = '1.00×';
-  redrawBgPhotoCanvas();
-});
-
-function setBgAdjustMode(on){
-  bgAdjustMode = on && !!bgPhotoImg;
-  document.getElementById('bgAdjustBtn').classList.toggle('active', bgAdjustMode);
-  canvas.style.pointerEvents = bgAdjustMode ? 'none' : 'auto';
-  document.getElementById('bgPhotoCanvas').classList.toggle('adjustable', bgAdjustMode);
-}
-document.getElementById('bgAdjustBtn').addEventListener('click', ()=>{
-  setBgAdjustMode(!bgAdjustMode);
-});
-
-let bgDragging=false, bgLastX=0, bgLastY=0;
-const bgPhotoCanvasEl = document.getElementById('bgPhotoCanvas');
-bgPhotoCanvasEl.addEventListener('pointerdown', e=>{
-  if(!bgAdjustMode) return;
-  bgDragging = true; bgLastX=e.clientX; bgLastY=e.clientY;
-  bgPhotoCanvasEl.setPointerCapture(e.pointerId);
-});
-bgPhotoCanvasEl.addEventListener('pointerup', ()=>{ bgDragging=false; });
-bgPhotoCanvasEl.addEventListener('pointermove', e=>{
-  if(!bgDragging) return;
-  const dx = e.clientX-bgLastX, dy = e.clientY-bgLastY;
-  bgLastX=e.clientX; bgLastY=e.clientY;
-  const {w,h} = paneSizePx();
-  bgPhoto.panX = clampNum(bgPhoto.panX - dx/w, -2, 2);
-  bgPhoto.panY = clampNum(bgPhoto.panY - dy/h, -2, 2);
-  redrawBgPhotoCanvas();
-});
-bgPhotoCanvasEl.addEventListener('wheel', e=>{
-  if(!bgAdjustMode) return;
-  e.preventDefault();
-  bgPhoto.zoom = clampNum(bgPhoto.zoom*(1-e.deltaY*0.001), 1, 6);
-  document.getElementById('bgZoomRange').value = bgPhoto.zoom;
-  document.getElementById('vBgZoom').textContent = bgPhoto.zoom.toFixed(2)+'×';
-  redrawBgPhotoCanvas();
-}, {passive:false});
-
-
-const arcInput = document.getElementById('arcAngle');
-arcInput.addEventListener('input', ()=>document.getElementById('vArc').textContent = arcInput.value+'°');
-const frameCountInput = document.getElementById('frameCount');
-frameCountInput.addEventListener('input', ()=>document.getElementById('vFrames').textContent = frameCountInput.value);
-const fpsInput = document.getElementById('fpsRange');
-fpsInput.addEventListener('input', ()=>document.getElementById('vFps').textContent = fpsInput.value+' fps');
-
-/* ============================================================
-   RENDER LOOP
-   ============================================================ */
-function animate(now){
-  requestAnimationFrame(animate);
-  maybeSort(now||0);
-  renderer.render(scene, camera);
-}
-resizeRenderer();
-initCropDefault();
-applyCamera();
-requestAnimationFrame(animate);
-
-/* ============================================================
-   MEDIAN-CUT QUANTIZER + LZW GIF ENCODER (self-contained)
+   MEDIAN-CUT QUANTIZER + LZW GIF ENCODER (omggif, unchanged from
+   the Three.js build — pure canvas/JS, no engine dependency)
    ============================================================ */
 function buildPalette(sampleColors, maxColors){
   let boxes = [sampleColors];
@@ -1419,9 +945,8 @@ function buildPalette(sampleColors, maxColors){
     return [Math.round(r/n), Math.round(g/n), Math.round(b/n)];
   });
 }
-
 function buildNearestLUT(palette){
-  const LEVELS = 32; // 5 bits per channel
+  const LEVELS = 32;
   const lut = new Uint8Array(LEVELS*LEVELS*LEVELS);
   for(let ri=0; ri<LEVELS; ri++){
     const r = (ri/(LEVELS-1))*255;
@@ -1441,155 +966,91 @@ function buildNearestLUT(palette){
   }
   return {lut, levels:LEVELS};
 }
-
 function frameToIndices(imageData, lutObj){
   const {lut, levels} = lutObj;
   const src = imageData.data;
   const n = imageData.width*imageData.height;
   const out = new Uint8Array(n);
-  const shift = 8 - Math.log2(levels); // levels=32 -> shift=3
+  const shift = 8 - Math.log2(levels);
   for(let i=0;i<n;i++){
     const r = src[i*4]>>shift, g = src[i*4+1]>>shift, b = src[i*4+2]>>shift;
     out[i] = lut[(r*levels+g)*levels+b];
   }
   return out;
 }
-
-/* ---- omggif GifWriter (Dean McNamee, MIT) — battle-tested LZW/GIF bitstream writer ---- */
 function GifWriter(buf, width, height, gopts) {
   var p = 0;
-
   var gopts = gopts === undefined ? { } : gopts;
   var loop_count = gopts.loop === undefined ? null : gopts.loop;
   var global_palette = gopts.palette === undefined ? null : gopts.palette;
-
   if (width <= 0 || height <= 0 || width > 65535 || height > 65535)
     throw new Error("Width/Height invalid.");
-
   function check_palette_and_num_colors(palette) {
     var num_colors = palette.length;
-    if (num_colors < 2 || num_colors > 256 ||  num_colors & (num_colors-1)) {
-      throw new Error(
-          "Invalid code/color length, must be power of 2 and 2 .. 256.");
-    }
+    if (num_colors < 2 || num_colors > 256 || num_colors & (num_colors-1))
+      throw new Error("Invalid code/color length, must be power of 2 and 2 .. 256.");
     return num_colors;
   }
-
-  // - Header.
-  buf[p++] = 0x47; buf[p++] = 0x49; buf[p++] = 0x46;  // GIF
-  buf[p++] = 0x38; buf[p++] = 0x39; buf[p++] = 0x61;  // 89a
-
-  // Handling of Global Color Table (palette) and background index.
-  var gp_num_colors_pow2 = 0;
-  var background = 0;
-  if (global_palette !== null) {
-    var gp_num_colors = check_palette_and_num_colors(global_palette);
-    while (gp_num_colors >>= 1) ++gp_num_colors_pow2;
-    gp_num_colors = 1 << gp_num_colors_pow2;
-    --gp_num_colors_pow2;
-    if (gopts.background !== undefined) {
-      background = gopts.background;
-      if (background >= gp_num_colors)
-        throw new Error("Background index out of range.");
-      // The GIF spec states that a background index of 0 should be ignored, so
-      // this is probably a mistake and you really want to set it to another
-      // slot in the palette.  But actually in the end most browsers, etc end
-      // up ignoring this almost completely (including for dispose background).
-      if (background === 0)
-        throw new Error("Background index explicitly passed as 0.");
-    }
-  }
-
-  // - Logical Screen Descriptor.
-  // NOTE(deanm): w/h apparently ignored by implementations, but set anyway.
+  buf[p++] = 0x47; buf[p++] = 0x49; buf[p++] = 0x46;
+  buf[p++] = 0x38; buf[p++] = 0x39; buf[p++] = 0x61;
+  var gct_p = 0;
   buf[p++] = width & 0xff; buf[p++] = width >> 8 & 0xff;
   buf[p++] = height & 0xff; buf[p++] = height >> 8 & 0xff;
-  // NOTE: Indicates 0-bpp original color resolution (unused?).
-  buf[p++] = (global_palette !== null ? 0x80 : 0) |  // Global Color Table Flag.
-             gp_num_colors_pow2;  // NOTE: No sort flag (unused?).
-  buf[p++] = background;  // Background Color Index.
-  buf[p++] = 0;  // Pixel aspect ratio (unused?).
-
-  // - Global Color Table
   if (global_palette !== null) {
+    var size = check_palette_and_num_colors(global_palette) - 1;
+    buf[p++] = 0x80 | (size<<0);
+    buf[p++] = 0;
+    buf[p++] = 0;
     for (var i = 0, il = global_palette.length; i < il; ++i) {
       var rgb = global_palette[i];
       buf[p++] = rgb >> 16 & 0xff;
       buf[p++] = rgb >> 8 & 0xff;
       buf[p++] = rgb & 0xff;
     }
+  } else {
+    buf[p++] = 0; buf[p++] = 0; buf[p++] = 0;
   }
-
-  if (loop_count !== null) {  // Netscape block for looping.
+  if (loop_count !== null) {
     if (loop_count < 0 || loop_count > 65535)
-      throw new Error("Loop count invalid.")
-    // Extension code, label, and length.
+      throw new Error("Loop count invalid.");
     buf[p++] = 0x21; buf[p++] = 0xff; buf[p++] = 0x0b;
-    // NETSCAPE2.0
+    // NETSCAPE2.0 — written byte-by-byte to match the GIF89a spec exactly
     buf[p++] = 0x4e; buf[p++] = 0x45; buf[p++] = 0x54; buf[p++] = 0x53;
     buf[p++] = 0x43; buf[p++] = 0x41; buf[p++] = 0x50; buf[p++] = 0x45;
     buf[p++] = 0x32; buf[p++] = 0x2e; buf[p++] = 0x30;
-    // Sub-block
-    buf[p++] = 0x03; buf[p++] = 0x01;
+    buf[p++] = 3;
+    buf[p++] = 1;
     buf[p++] = loop_count & 0xff; buf[p++] = loop_count >> 8 & 0xff;
-    buf[p++] = 0x00;  // Terminator.
+    buf[p++] = 0;
   }
-
-
   var ended = false;
-
   this.addFrame = function(x, y, w, h, indexed_pixels, opts) {
-    if (ended === true) { --p; ended = false; }  // Un-end.
-
     opts = opts === undefined ? { } : opts;
-
-    // TODO(deanm): Bounds check x, y.  Do they need to be within the virtual
-    // canvas width/height, I imagine?
+    if (ended === true) { --p; ended = false; }
+    x = x === undefined ? 0 : x;
+    y = y === undefined ? 0 : y;
     if (x < 0 || y < 0 || x > 65535 || y > 65535)
-      throw new Error("x/y invalid.")
-
+      throw new Error("x/y invalid.");
     if (w <= 0 || h <= 0 || w > 65535 || h > 65535)
-      throw new Error("Width/Height invalid.")
-
+      throw new Error("Width/Height invalid.");
     if (indexed_pixels.length < w * h)
       throw new Error("Not enough pixels for the frame size.");
-
     var using_local_palette = true;
     var palette = opts.palette;
     if (palette === undefined || palette === null) {
       using_local_palette = false;
       palette = global_palette;
     }
-
     if (palette === undefined || palette === null)
       throw new Error("Must supply either a local or global palette.");
-
     var num_colors = check_palette_and_num_colors(palette);
-
-    // Compute the min_code_size (power of 2), destroying num_colors.
     var min_code_size = 0;
     while (num_colors >>= 1) ++min_code_size;
-    num_colors = 1 << min_code_size;  // Now we can easily get it back.
-
+    num_colors = 1 << min_code_size;
     var delay = opts.delay === undefined ? 0 : opts.delay;
-
-    // From the spec:
-    //     0 -   No disposal specified. The decoder is
-    //           not required to take any action.
-    //     1 -   Do not dispose. The graphic is to be left
-    //           in place.
-    //     2 -   Restore to background color. The area used by the
-    //           graphic must be restored to the background color.
-    //     3 -   Restore to previous. The decoder is required to
-    //           restore the area overwritten by the graphic with
-    //           what was there prior to rendering the graphic.
-    //  4-7 -    To be defined.
-    // NOTE(deanm): Dispose background doesn't really work, apparently most
-    // browsers ignore the background palette index and clear to transparency.
     var disposal = opts.disposal === undefined ? 0 : opts.disposal;
-    if (disposal < 0 || disposal > 3)  // 4-7 is reserved.
+    if (disposal < 0 || disposal > 3)
       throw new Error("Disposal out of range.");
-
     var use_transparency = false;
     var transparent_index = 0;
     if (opts.transparent !== undefined && opts.transparent !== null) {
@@ -1598,204 +1059,96 @@ function GifWriter(buf, width, height, gopts) {
       if (transparent_index < 0 || transparent_index >= num_colors)
         throw new Error("Transparent color index.");
     }
-
     if (disposal !== 0 || use_transparency || delay !== 0) {
-      // - Graphics Control Extension
-      buf[p++] = 0x21; buf[p++] = 0xf9;  // Extension / Label.
-      buf[p++] = 4;  // Byte size.
-
+      buf[p++] = 0x21; buf[p++] = 0xf9;
+      buf[p++] = 4;
       buf[p++] = disposal << 2 | (use_transparency === true ? 1 : 0);
       buf[p++] = delay & 0xff; buf[p++] = delay >> 8 & 0xff;
-      buf[p++] = transparent_index;  // Transparent color index.
-      buf[p++] = 0;  // Block Terminator.
+      buf[p++] = transparent_index;
+      buf[p++] = 0;
     }
-
-    // - Image Descriptor
-    buf[p++] = 0x2c;  // Image Seperator.
-    buf[p++] = x & 0xff; buf[p++] = x >> 8 & 0xff;  // Left.
-    buf[p++] = y & 0xff; buf[p++] = y >> 8 & 0xff;  // Top.
+    buf[p++] = 0x2c;
+    buf[p++] = x & 0xff; buf[p++] = x >> 8 & 0xff;
+    buf[p++] = y & 0xff; buf[p++] = y >> 8 & 0xff;
     buf[p++] = w & 0xff; buf[p++] = w >> 8 & 0xff;
     buf[p++] = h & 0xff; buf[p++] = h >> 8 & 0xff;
-    // NOTE: No sort flag (unused?).
-    // TODO(deanm): Support interlace.
-    buf[p++] = using_local_palette === true ? (0x80 | (min_code_size-1)) : 0;
-
-    // - Local Color Table
     if (using_local_palette === true) {
+      buf[p++] = 0x80 | 0 | 0 | 0 | (min_code_size-1);
       for (var i = 0, il = palette.length; i < il; ++i) {
         var rgb = palette[i];
         buf[p++] = rgb >> 16 & 0xff;
         buf[p++] = rgb >> 8 & 0xff;
         buf[p++] = rgb & 0xff;
       }
+    } else {
+      buf[p++] = 0;
     }
-
-    p = GifWriterOutputLZWCodeStream(
-            buf, p, min_code_size < 2 ? 2 : min_code_size, indexed_pixels);
-
+    if (min_code_size < 2) min_code_size = 2;
+    p = GifWriterOutputLZWCodeStream(buf, p, min_code_size, indexed_pixels);
     return p;
   };
-
   this.end = function() {
-    if (ended === false) {
-      buf[p++] = 0x3b;  // Trailer.
-      ended = true;
-    }
+    if (ended === false) { buf[p++] = 0x3b; ended = true; }
     return p;
   };
-
   this.getOutputBuffer = function() { return buf; };
   this.setOutputBuffer = function(v) { buf = v; };
   this.getOutputBufferPosition = function() { return p; };
   this.setOutputBufferPosition = function(v) { p = v; };
 }
-
-// Main compression routine, palette indexes -> LZW code stream.
-// |index_stream| must have at least one entry.
 function GifWriterOutputLZWCodeStream(buf, p, min_code_size, index_stream) {
   buf[p++] = min_code_size;
-  var cur_subblock = p++;  // Pointing at the length field.
-
+  var cur_subblock = p++;
   var clear_code = 1 << min_code_size;
   var code_mask = clear_code - 1;
   var eoi_code = clear_code + 1;
   var next_code = eoi_code + 1;
-
-  var cur_code_size = min_code_size + 1;  // Number of bits per code.
+  var cur_code_size = min_code_size + 1;
   var cur_shift = 0;
-  // We have at most 12-bit codes, so we should have to hold a max of 19
-  // bits here (and then we would write out).
   var cur = 0;
-
   function emit_bytes_to_buffer(bit_block_size) {
     while (cur_shift >= bit_block_size) {
       buf[p++] = cur & 0xff;
       cur >>= 8; cur_shift -= 8;
-      if (p === cur_subblock + 256) {  // Finished a subblock.
-        buf[cur_subblock] = 255;
-        cur_subblock = p++;
-      }
+      if (p === cur_subblock + 256) { buf[cur_subblock] = 255; cur_subblock = p++; }
     }
   }
-
   function emit_code(c) {
     cur |= c << cur_shift;
     cur_shift += cur_code_size;
     emit_bytes_to_buffer(8);
   }
-
-  // I am not an expert on the topic, and I don't want to write a thesis.
-  // However, it is good to outline here the basic algorithm and the few data
-  // structures and optimizations here that make this implementation fast.
-  // The basic idea behind LZW is to build a table of previously seen runs
-  // addressed by a short id (herein called output code).  All data is
-  // referenced by a code, which represents one or more values from the
-  // original input stream.  All input bytes can be referenced as the same
-  // value as an output code.  So if you didn't want any compression, you
-  // could more or less just output the original bytes as codes (there are
-  // some details to this, but it is the idea).  In order to achieve
-  // compression, values greater then the input range (codes can be up to
-  // 12-bit while input only 8-bit) represent a sequence of previously seen
-  // inputs.  The decompressor is able to build the same mapping while
-  // decoding, so there is always a shared common knowledge between the
-  // encoding and decoder, which is also important for "timing" aspects like
-  // how to handle variable bit width code encoding.
-  //
-  // One obvious but very important consequence of the table system is there
-  // is always a unique id (at most 12-bits) to map the runs.  'A' might be
-  // 4, then 'AA' might be 10, 'AAA' 11, 'AAAA' 12, etc.  This relationship
-  // can be used for an effecient lookup strategy for the code mapping.  We
-  // need to know if a run has been seen before, and be able to map that run
-  // to the output code.  Since we start with known unique ids (input bytes),
-  // and then from those build more unique ids (table entries), we can
-  // continue this chain (almost like a linked list) to always have small
-  // integer values that represent the current byte chains in the encoder.
-  // This means instead of tracking the input bytes (AAAABCD) to know our
-  // current state, we can track the table entry for AAAABC (it is guaranteed
-  // to exist by the nature of the algorithm) and the next character D.
-  // Therefor the tuple of (table_entry, byte) is guaranteed to also be
-  // unique.  This allows us to create a simple lookup key for mapping input
-  // sequences to codes (table indices) without having to store or search
-  // any of the code sequences.  So if 'AAAA' has a table entry of 12, the
-  // tuple of ('AAAA', K) for any input byte K will be unique, and can be our
-  // key.  This leads to a integer value at most 20-bits, which can always
-  // fit in an SMI value and be used as a fast sparse array / object key.
-
-  // Output code for the current contents of the index buffer.
-  var ib_code = index_stream[0] & code_mask;  // Load first input index.
-  var code_table = { };  // Key'd on our 20-bit "tuple".
-
-  emit_code(clear_code);  // Spec says first code should be a clear code.
-
-  // First index already loaded, process the rest of the stream.
+  var ib_code = index_stream[0] & code_mask;
+  var code_table = {};
+  emit_code(clear_code);
   for (var i = 1, il = index_stream.length; i < il; ++i) {
     var k = index_stream[i] & code_mask;
-    var cur_key = ib_code << 8 | k;  // (prev, k) unique tuple.
-    var cur_code = code_table[cur_key];  // buffer + k.
-
-    // Check if we have to create a new code table entry.
-    if (cur_code === undefined) {  // We don't have buffer + k.
-      // Emit index buffer (without k).
-      // This is an inline version of emit_code, because this is the core
-      // writing routine of the compressor (and V8 cannot inline emit_code
-      // because it is a closure here in a different context).  Additionally
-      // we can call emit_byte_to_buffer less often, because we can have
-      // 30-bits (from our 31-bit signed SMI), and we know our codes will only
-      // be 12-bits, so can safely have 18-bits there without overflow.
-      // emit_code(ib_code);
-      cur |= ib_code << cur_shift;
+    var cur_key = ib_code << 8 | k;
+    var cur_code = code_table[cur_key];
+    if (cur_code === undefined) {
+      cur = cur | ib_code << cur_shift;
       cur_shift += cur_code_size;
-      while (cur_shift >= 8) {
-        buf[p++] = cur & 0xff;
-        cur >>= 8; cur_shift -= 8;
-        if (p === cur_subblock + 256) {  // Finished a subblock.
-          buf[cur_subblock] = 255;
-          cur_subblock = p++;
-        }
-      }
-
-      if (next_code === 4096) {  // Table full, need a clear.
+      emit_bytes_to_buffer(8);
+      if (next_code === 4096) {
         emit_code(clear_code);
         next_code = eoi_code + 1;
         cur_code_size = min_code_size + 1;
-        code_table = { };
-      } else {  // Table not full, insert a new entry.
-        // Increase our variable bit code sizes if necessary.  This is a bit
-        // tricky as it is based on "timing" between the encoding and
-        // decoder.  From the encoders perspective this should happen after
-        // we've already emitted the index buffer and are about to create the
-        // first table entry that would overflow our current code bit size.
+        code_table = {};
+      } else {
         if (next_code >= (1 << cur_code_size)) ++cur_code_size;
-        code_table[cur_key] = next_code++;  // Insert into code table.
+        code_table[cur_key] = next_code++;
       }
-
-      ib_code = k;  // Index buffer to single input k.
-    } else {
-      ib_code = cur_code;  // Index buffer to sequence in code table.
-    }
+      ib_code = k;
+    } else { ib_code = cur_code; }
   }
-
-  emit_code(ib_code);  // There will still be something in the index buffer.
-  emit_code(eoi_code);  // End Of Information.
-
-  // Flush / finalize the sub-blocks stream to the buffer.
+  emit_code(ib_code);
+  emit_code(eoi_code);
   emit_bytes_to_buffer(1);
-
-  // Finish the sub-blocks, writing out any unfinished lengths and
-  // terminating with a sub-block of length 0.  If we have already started
-  // but not yet used a sub-block it can just become the terminator.
-  if (cur_subblock + 1 === p) {  // Started but unused.
-    buf[cur_subblock] = 0;
-  } else {  // Started and used, write length and additional terminator block.
-    buf[cur_subblock] = p - cur_subblock - 1;
-    buf[p++] = 0;
-  }
+  if (cur_subblock + 1 === p) { buf[cur_subblock] = 0; }
+  else { buf[cur_subblock] = p - cur_subblock - 1; buf[p++] = 0; }
   return p;
 }
-
-
 function encodeGIF(frames, width, height, delayCs){
-  // 1. sample colors across all frames to build one shared 256-color palette
   const samples = [];
   const strideStep = Math.max(1, Math.floor((width*height)/4000));
   for(const fd of frames){
@@ -1809,22 +1162,37 @@ function encodeGIF(frames, width, height, delayCs){
   const lutObj = buildNearestLUT(palette);
   const packedPalette = palette.map(c => (c[0]<<16) | (c[1]<<8) | c[2]);
 
-  // 2. allocate a generously-sized output buffer and write with GifWriter
-  const maxBytes = 32 + (256*3) + frames.length*(width*height + 64);
-  const buf = new Uint8Array(maxBytes);
-  const gw = new GifWriter(buf, width, height, {palette: packedPalette, loop: 0});
+  // Precompute indices once (used across retries below).
+  const allIndices = frames.map(fd => frameToIndices(fd, lutObj));
 
-  frames.forEach(fd=>{
-    const indices = frameToIndices(fd, lutObj);
-    gw.addFrame(0, 0, width, height, indices, {delay: delayCs, disposal: 2});
-  });
-
-  const finalLength = gw.end();
+  // Uint8Array writes past the end are silently dropped (no error!), which
+  // can corrupt/truncate the file for busy, high-detail frames (worst-case
+  // LZW output can run well past the raw pixel count). Start generous and
+  // grow-and-retry if we ever land suspiciously close to the buffer's edge,
+  // so large/high-detail exports can never silently truncate.
+  let sizePerFramePixel = 2.2; // multiplier over width*height, well above worst-case LZW expansion
+  let buf, gw, finalLength;
+  for(let attempt=0; attempt<5; attempt++){
+    const maxBytes = 64 + (256*3) + frames.length*Math.ceil(width*height*sizePerFramePixel + 1024);
+    buf = new Uint8Array(maxBytes);
+    gw = new GifWriter(buf, width, height, {palette: packedPalette, loop: 0});
+    allIndices.forEach(indices=>{
+      gw.addFrame(0, 0, width, height, indices, {delay: delayCs, disposal: 2});
+    });
+    finalLength = gw.end();
+    if(finalLength < maxBytes - 2048) break; // comfortably inside the buffer — done
+    sizePerFramePixel *= 2; // came close to the edge: grow and re-encode to be safe
+  }
   return new Blob([buf.slice(0, finalLength)], {type:'image/gif'});
 }
 
 /* ============================================================
-   BULLET-TIME CAPTURE
+   BULLET-TIME CAPTURE (PlayCanvas variant)
+   PlayCanvas renders on its own internal RAF loop, so instead of
+   calling renderer.render() synchronously per frame (as with
+   Three.js), we set the camera transform then await the engine's
+   own 'postrender' event to know that exact frame has been drawn
+   before we grab pixels from the canvas.
    ============================================================ */
 const shutterBtn = document.getElementById('shutterBtn');
 const recFlag = document.getElementById('recFlag');
@@ -1838,16 +1206,30 @@ function setProgress(i, total, label){
   progressLabel.textContent = label;
   recCount.textContent = i+'/'+total;
 }
+function renderFrameNow(){
+  // Direct, synchronous render — same guarantee Three.js's renderer.render() gave us:
+  // the canvas reflects the current entity transforms the instant this returns,
+  // with no dependency on the engine's own internal rAF loop timing/events.
+  app.update(0);
+  app.render();
+}
 
 shutterBtn.addEventListener('click', captureWigglegram);
 
 async function captureWigglegram(){
-  if(!pointsObj || !worldData){ alert('Load a PLY splat first.'); return; }
+  if(!worldData || !fullEntity){ alert('Load a PLY splat first.'); return; }
   shutterBtn.disabled = true;
   recFlag.classList.add('on');
   document.querySelectorAll('.dial-btn[data-view]').forEach(b=>b.style.pointerEvents='none');
-  const pivotMarkerWasVisible = pivotMarker ? pivotMarker.visible : false;
-  if(pivotMarker) pivotMarker.visible = false; // never bake the pivot marker into the export
+
+  // capture always uses full detail, regardless of the preview toggle
+  const wasPreview = document.getElementById('previewToggle').checked;
+  if(wasPreview){
+    document.getElementById('previewToggle').checked = false;
+    if(previewEntity) previewEntity.enabled = false;
+    if(fullEntity) fullEntity.enabled = true;
+    renderFrameNow();
+  }
 
   const frameCount = parseInt(frameCountInput.value,10);
   const arcDeg = parseFloat(arcInput.value);
@@ -1860,8 +1242,6 @@ async function captureWigglegram(){
   const startAz = az0 - arcDeg/2;
   const stepAz = frameCount>1 ? arcDeg/(frameCount-1) : 0;
 
-  // crop rect, expressed as a fraction of the live viewport pane (WYSIWYG with the on-screen crop box)
-  // when crop is disabled, capture the full frame instead
   const {w:paneCssW, h:paneCssH} = paneSizePx();
   const fracX = cropEnabled ? cropRect.x/paneCssW : 0;
   const fracY = cropEnabled ? cropRect.y/paneCssH : 0;
@@ -1872,10 +1252,6 @@ async function captureWigglegram(){
   capCanvas.width = dims.w; capCanvas.height = dims.h;
   const cctx = capCanvas.getContext('2d');
 
-  // full-pane compositing scratch canvas — mirrors the live backdrop + splat stack before cropping
-  const fullCanvas = document.createElement('canvas');
-  const fctx = fullCanvas.getContext('2d');
-
   const frames = [];
   const thumbUrls = [];
 
@@ -1884,22 +1260,14 @@ async function captureWigglegram(){
     cam.el = el0;
     cam.radius = rad0;
     applyCamera();
-    sortPointsByDepth();
-    renderer.render(scene, camera);
+    renderFrameNow(); // guarantees the canvas reflects THIS azimuth
 
-    const bw = renderer.domElement.width, bh = renderer.domElement.height;
-    if(fullCanvas.width!==bw || fullCanvas.height!==bh){ fullCanvas.width=bw; fullCanvas.height=bh; }
-
-    if(bgPhotoImg){
-      drawBackdrop(fctx, bgPhotoImg, bw, bh, bgPhoto.zoom, bgPhoto.panX, bgPhoto.panY);
-    } else {
-      fctx.fillStyle = bg;
-      fctx.fillRect(0,0,bw,bh);
-    }
-    fctx.drawImage(renderer.domElement, 0, 0, bw, bh); // transparent gaps let the backdrop show through
-
+    const bw = canvas.width, bh = canvas.height;
     const srcX = fracX*bw, srcY = fracY*bh, srcW = fracW*bw, srcH = fracH*bh;
-    cctx.drawImage(fullCanvas, srcX, srcY, srcW, srcH, 0, 0, dims.w, dims.h);
+
+    cctx.fillStyle = bg;
+    cctx.fillRect(0,0,dims.w,dims.h);
+    cctx.drawImage(canvas, srcX, srcY, srcW, srcH, 0, 0, dims.w, dims.h);
     frames.push(cctx.getImageData(0,0,dims.w,dims.h));
     thumbUrls.push(capCanvas.toDataURL('image/jpeg', 0.7));
 
@@ -1909,7 +1277,12 @@ async function captureWigglegram(){
 
   cam.az = az0; cam.el = el0; cam.radius = rad0;
   applyCamera();
-  sortPointsByDepth();
+
+  if(wasPreview){
+    document.getElementById('previewToggle').checked = true;
+    if(fullEntity) fullEntity.enabled = false;
+    if(previewEntity) previewEntity.enabled = true;
+  }
 
   renderFilmstrip(thumbUrls);
 
@@ -1936,7 +1309,6 @@ async function captureWigglegram(){
   setProgress(frameCount, frameCount, 'done — '+sequence.length+' frames, '+(blob.size/1024).toFixed(0)+' KB');
   recFlag.classList.remove('on');
   shutterBtn.disabled = false;
-  if(pivotMarker) pivotMarker.visible = pivotMarkerWasVisible;
   document.querySelectorAll('.dial-btn[data-view]').forEach(b=>b.style.pointerEvents='auto');
 }
 
@@ -1951,7 +1323,9 @@ function renderFilmstrip(urls){
   });
 }
 
-})();
+initCropDefault();
+updateArcVisualizer();
+log('Stage 2 ready. Rig, crop, and GIF export wired up on the PlayCanvas renderer.');
 </script>
 </body>
 </html>
