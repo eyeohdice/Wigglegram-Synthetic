@@ -7,9 +7,9 @@ Turn a single photo into an animated wigglegram. Runs entirely in the browser wi
 ## What it does
 
 - **Image → depth → parallax.** Upload a photo, get an automatic depth estimate (Depth Anything V2, in-browser), and generate a looping GIF or video with orbit / parallax / warp motion.
-- **Splat → 3D orbit.** Upload a `.ply` Gaussian splat instead, and Synth Wiggle drives a real 3D camera sweep around it — sharper, more convincing parallax than a 2D depth map can fake.
+- **Splat → 3D orbit.** Upload a `.ply` Gaussian splat instead, and Synth Wiggle drives a real 3D camera sweep around it; sharper, more convincing parallax than a 2D depth map can fake.
 - **Click-to-set pivot.** Click anywhere on a loaded splat to re-center the orbit on that point.
-- **Unlock rotate.** Free-drag around a splat to find your framing, then lock it back in for export.
+- **Unlock rotate.** If needed, Free-drag around a splat to find your framing, then lock it back in for export.
 - **Own depth map.** Supply a custom grayscale depth image instead of the automatic estimate.
 - **Export GIF or MP4/WebM**, at whatever resolution you want.
 
@@ -32,3 +32,5 @@ Synth Wiggle doesn't generate splats itself — bring your own `.ply`, made with
 ## Stack
 
 Three.js, `@mkkellogg/gaussian-splats-3d`, Tweakpane, `gif.js`, and `@huggingface/transformers` (in-browser depth estimation) — no build step, no backend required.
+
+WIGGLE RESPONSIBLY.
